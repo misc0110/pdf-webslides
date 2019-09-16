@@ -77,16 +77,33 @@ char* encode(char* fname) {
     return out;
 }
 
-int convert(PopplerPage *page, const char *fname) {
+int convert(PopplerPage *page, const char *fname, char** comments) {
   cairo_surface_t *surface;
   cairo_t *img;
   double width, height;
+  char* comm = calloc(1024, 1);
 
   poppler_page_get_size(page, &width, &height);
   surface = cairo_svg_surface_create(fname, width, height);
   img = cairo_create(surface);
 
   poppler_page_render_for_printing(page, img);
+  
+  GList* annot_list = poppler_page_get_annot_mapping(page);
+  GList* s;
+  for (s = annot_list; s != NULL; s = s->next) {
+    PopplerAnnotMapping* m = (PopplerAnnotMapping *)s->data;
+    int type = poppler_annot_get_annot_type(m->annot);
+    if(type == 1) {
+        char* cont = poppler_annot_get_contents(m->annot);
+        strncat(comm, cont, 1024);
+        strncat(comm, "\n", 1024);
+        g_free(cont);
+    }
+  }
+  *comments = comm;
+  poppler_page_free_annot_mapping(annot_list);  
+    
   cairo_show_page(img);
 
   cairo_destroy(img);
@@ -125,16 +142,31 @@ int main(int argc, char *args[]) {
     fprintf(output, "%s", line);
   }
 
+  // annotations
+  char* annotations[pages];
+  memset(annotations, 0, sizeof(annotations));
+  
   // add inline images
-  fprintf(output, "slide_img = [\n");
+  fprintf(output, "var slide_img = [\n");
   for (int p = 0; p < pages; p++) {
     page = poppler_document_get_page(pdffile, p);
-    convert(page, "slide.svg");
+    convert(page, "slide.svg", &(annotations[p]));
     char* b64 = encode("slide.svg");
     fprintf(output, "\"%s\",\n", b64);
     free(b64);
   }
-  fprintf(output, "0];</script>\n");
+  fprintf(output, "0];\n");
+  
+  // add annotations
+  fprintf(output, "var slide_annot = [\n");
+  for(int p = 0; p < pages; p++) {
+      // TODO handle escape
+      char enc[1024];
+      base64encode(annotations[p], strlen(annotations[p]), enc, sizeof(enc));
+      fprintf(output, "\"%s\",\n", enc);
+      free(annotations[p]);
+  }
+  fprintf(output, "\"\"];</script>\n");
   unlink("slide.svg");
   return 0;
 }

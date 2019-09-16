@@ -12,11 +12,18 @@ img#slide {
 img#slide-next {
     float: right;
 }
+#slide-annot {
+    color: white;
+    font-size: 200%;
+    white-space: pre;
+    font-family: 'sans serif',Verdana,Arial;
+    margin: 1em;
+}
 </style>
 </head>
 <body onload="init()">
 <img id="slide" width="100%"/>
-<img id="slide-next" style="display: none;"/>
+<img id="slide-next" style="display: none;"/><span id="slide-annot" style="display: none;"></span>
 <input type="button" onclick="open_slides()" value="Open slides" style="display: none;" id="open-btn" />
 <script>
     var slide = 0;
@@ -49,6 +56,8 @@ img#slide-next {
         document.getElementById("slide").src = "data:image/svg+xml;base64," + slide_img[slide];
         if(presenter) {
             document.getElementById("slide-next").src = "data:image/svg+xml;base64," + slide_img[slide + 1];
+            document.getElementById("slide-annot").innerHTML = atob(slide_annot[slide]);
+            
         }
     }
 
@@ -76,12 +85,15 @@ img#slide-next {
     }
 
     function init() {
+        var font_size = 200;
+    
         if(document.location.href.indexOf("?presenter") != -1) {
             presenter = true;
             document.getElementById("slide").style.width="70%";
             document.getElementById("slide-next").style.width="30%";
             document.getElementById("open-btn").style.display = "block";
             document.getElementById("slide-next").style.display = "block";
+            document.getElementById("slide-annot").style.display = "";
         }
         var img = document.getElementById("slide");
         img.addEventListener('wheel', function(e) {
@@ -102,7 +114,13 @@ img#slide-next {
             } else if(e.keyCode == 39 /*|| e.keyCode === 40*/) {
                 e.preventDefault();
                 next();
-            }
+            } else if(e.key == "+") {
+                font_size += 10;
+                document.getElementById("slide-annot").style.fontSize = font_size + "%";
+            } else if(e.key == "-") {
+                font_size -= 10;
+                document.getElementById("slide-annot").style.fontSize = font_size + "%";
+            } else console.log(e.keyCode);
         });
 
         img.addEventListener("touchstart", move);
