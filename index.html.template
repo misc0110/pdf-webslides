@@ -19,31 +19,30 @@ img#slide-next {
     font-family: 'sans serif',Verdana,Arial;
     margin: 1em;
 }
+#freeze {
+    color: white;
+}
 </style>
 </head>
 <body onload="init()">
 <img id="slide" width="100%"/>
 <img id="slide-next" style="display: none;"/><span id="slide-annot" style="display: none;"></span>
 <input type="button" onclick="open_slides()" value="Open slides" style="display: none;" id="open-btn" />
+<div><span style="display: none;" id="freeze">Freeze</span></div>
 <script>
     var slide = 0;
     var x = 0;
     var presenter = false;
     var slides = null;
+    var freeze = false;
 
     function next() {
         if(slide < slide_img.length - 2) slide++;
-        if(presenter && slides) {
-            slides.goto(slide);
-        }
         redraw();
     }
 
     function prev() {
         if(slide > 0) slide--;
-        if(presenter && slides) {
-            slides.goto(slide);
-        }
         redraw();
     }
     
@@ -55,9 +54,20 @@ img#slide-next {
     function redraw() {
         document.getElementById("slide").src = "data:image/svg+xml;base64," + slide_img[slide];
         if(presenter) {
-            document.getElementById("slide-next").src = "data:image/svg+xml;base64," + slide_img[slide + 1];
+            if(slide_img[slide + 1] != 0) {
+                document.getElementById("slide-next").src = "data:image/svg+xml;base64," + slide_img[slide + 1];
+            } else {
+                document.getElementById("slide-next").src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
+            }
             document.getElementById("slide-annot").innerHTML = atob(slide_annot[slide]);
             
+            if(slides && !freeze) {
+                try {
+                    slides.goto(slide);
+                } catch(e) {
+                    slides.postMessage({"action": "goto", "data": slide}, "*");
+                }
+            }
         }
     }
 
@@ -80,8 +90,21 @@ img#slide-next {
 
     function open_slides() {
         slides = window.open(document.location.href.replace(/\?presenter/g, "?presentslides"));
-        slides.slide = slide;
-        slides.redraw();
+        try {
+            slides.goto(slide);
+        } catch(e) {
+            window.setTimeout(function() {
+                slides.postMessage({"action": "goto", "data": slide}, "*");
+            }, 100);
+        }
+    }
+    
+    
+    function receiveMessage(event) {
+        if(event.data.action !== undefined && event.data.action == "goto") {
+            goto(event.data.data);
+        }
+        //console.log(event);
     }
 
     function init() {
@@ -120,6 +143,11 @@ img#slide-next {
             } else if(e.key == "-") {
                 font_size -= 10;
                 document.getElementById("slide-annot").style.fontSize = font_size + "%";
+            } else if(e.key == "f") {
+                freeze = !freeze;
+                document.getElementById("freeze").style.display = freeze ? "" : "none";
+                redraw();
+                
             } else console.log(e.keyCode);
         });
 
@@ -129,6 +157,8 @@ img#slide-next {
             e.preventDefault()
         }, false);
 
+        if(!presenter) window.addEventListener("message", receiveMessage, false);
+       
         redraw();
     };
     
