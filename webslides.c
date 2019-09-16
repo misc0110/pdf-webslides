@@ -7,7 +7,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include "colorprint_header.h"
 
+#define TAG_OK "[lg][+][/lg] "
+#define TAG_INFO "[ly][*][/ly] "
+#define TAG_FAIL "[bw][red]%d[/red][/bw] "
 
 int base64encode(const void* data_buf, size_t dataLength, char* result, size_t resultSize)
 {
@@ -118,8 +122,8 @@ int main(int argc, char *args[]) {
   char fname_uri[PATH_MAX];
 
   if (argc != 2) {
-    printf("Usage: webslides <in file.pdf>\n");
-    return -2;
+    printf_color(1, "Usage: webslides <in file.pdf>\n");
+    return -1;
   }
 
   realpath(args[1], abspath);
@@ -127,16 +131,29 @@ int main(int argc, char *args[]) {
 
   pdffile = poppler_document_new_from_file(fname_uri, NULL, NULL);
   if (pdffile == NULL) {
-    fprintf(stderr, "Could not open file '%s'\n", fname_uri);
+    printf_color(1, TAG_FAIL "Could not open file '%s'\n", fname_uri);
     return -3;
   }
 
   int pages = poppler_document_get_n_pages(pdffile);
+  printf_color(1, TAG_OK "Loaded %d slides\n", pages);
   
   FILE* template = fopen("index.html.template", "r");
+  if(!template) {
+      printf_color(1, TAG_FAIL "Could not open template file [m]index.html.template[/m]\n");
+      return 1;
+  }
   FILE* output = fopen("index.html", "w");
+  if(!output) {
+      printf_color(1, TAG_FAIL "Could not create output file [m]index.html[/m]\n");
+      return 1;
+  }
   size_t len = 0;
   char* line = NULL;
+  
+  printf_color(1, TAG_INFO "Converting slides...\n");
+  progress_start(1, pages, NULL);  
+
   // copy template
   while(getline(&line, &len, template) != -1) {
     fprintf(output, "%s", line);
@@ -151,6 +168,7 @@ int main(int argc, char *args[]) {
   for (int p = 0; p < pages; p++) {
     page = poppler_document_get_page(pdffile, p);
     convert(page, "slide.svg", &(annotations[p]));
+    progress_update(1);
     char* b64 = encode("slide.svg");
     fprintf(output, "\"%s\",\n", b64);
     free(b64);
@@ -160,7 +178,6 @@ int main(int argc, char *args[]) {
   // add annotations
   fprintf(output, "var slide_annot = [\n");
   for(int p = 0; p < pages; p++) {
-      // TODO handle escape
       char enc[1024];
       base64encode(annotations[p], strlen(annotations[p]), enc, sizeof(enc));
       fprintf(output, "\"%s\",\n", enc);
@@ -168,5 +185,8 @@ int main(int argc, char *args[]) {
   }
   fprintf(output, "\"\"];</script>\n");
   unlink("slide.svg");
+  
+  printf_color(1, TAG_OK "Done!\n");
+  
   return 0;
 }
