@@ -1,41 +1,55 @@
 <html>
+<head>
 <style>
 body, html {
     margin: 0;
     padding: 0;
+    background-color: #000;
+}
+img#slide {
+    float: left;
+}
+img#slide-next {
+    float: right;
 }
 </style>
+</head>
+<body onload="init()">
 <img id="slide" width="100%"/>
-<div id="slide-overlay">
-
-</div>
-
+<img id="slide-next" style="display: none;"/>
+<input type="button" onclick="open_slides()" value="Open slides" style="display: none;" id="open-btn" />
 <script>
-    var SLIDES = {{COUNT}};
-    var FORMAT = 3;
-    var PATH = "";
-
     var slide = 0;
     var x = 0;
-
-    function show_slide(sid) {
-        document.getElementById("slide").src = PATH + "slide" + sid + ".svg";
-    }
+    var presenter = false;
+    var slides = null;
 
     function next() {
-        if(slide < SLIDES) slide++;
+        if(slide < slide_img.length - 2) slide++;
+        if(presenter && slides) {
+            slides.goto(slide);
+        }
         redraw();
     }
 
     function prev() {
-        if(slide > 1) slide--;
+        if(slide > 0) slide--;
+        if(presenter && slides) {
+            slides.goto(slide);
+        }
+        redraw();
+    }
+    
+    function goto(sid) {
+        slide = sid;
         redraw();
     }
 
     function redraw() {
-        var slide_str = "" + slide;
-        while(slide_str.length < FORMAT) slide_str = "0" + slide_str;
-        show_slide(slide_str);
+        document.getElementById("slide").src = "data:image/svg+xml;base64," + slide_img[slide];
+        if(presenter) {
+            document.getElementById("slide-next").src = "data:image/svg+xml;base64," + slide_img[slide + 1];
+        }
     }
 
     function unify(e) {
@@ -55,61 +69,48 @@ body, html {
         else next();
     }
 
+    function open_slides() {
+        slides = window.open(document.location.href.replace(/\?presenter/g, "?presentslides"));
+        slides.slide = slide;
+        slides.redraw();
+    }
 
-    (function() {
-    var img = document.getElementById("slide");
-    img.addEventListener('wheel', function(e) {
-        e = e || window.event;
-        e.preventDefault();
-        if(e.deltaY < 0) {
-            prev();
-        } else {
-            next();
+    function init() {
+        if(document.location.href.indexOf("?presenter") != -1) {
+            presenter = true;
+            document.getElementById("slide").style.width="70%";
+            document.getElementById("slide-next").style.width="30%";
+            document.getElementById("open-btn").style.display = "block";
+            document.getElementById("slide-next").style.display = "block";
         }
-    });
-
-    window.addEventListener("keydown", function(e) {
-        e = e || window.event;
-        if(e.keyCode === 37 /*|| e.keyCode === 38*/) {
+        var img = document.getElementById("slide");
+        img.addEventListener('wheel', function(e) {
+            e = e || window.event;
             e.preventDefault();
-            prev();
-        } else if(e.keyCode == 39 /*|| e.keyCode === 40*/) {
-            e.preventDefault();
-            next();
-        }
-    });
+            if(e.deltaY < 0) {
+                prev();
+            } else {
+                next();
+            }
+        });
 
-    img.addEventListener("touchstart", move);
-    img.addEventListener("touchend", stop);
-    img.addEventListener("touchmove", function(e) {
-        e.preventDefault()
-    }, false);
-//     img.addEventListener("mouseover", function(e) {
-//         var s = document.getElementById("slide");
-//         var ov = document.getElementById("slide-overlay");
-//         var pos = s.getBoundingClientRect();
-//         if(e.clientX < pos.left + (pos.right - pos.left) / 2) {
-//             ov.style.position = "absolute";
-//             ov.style.left = pos.left;
-//             ov.style.top = pos.top;
-//             ov.style.width = pos.right - pos.left;
-//             ov.style.height = pos.bottom - pos.top;
-//             ov.style.backgroundColor = "#eee";
-//             ov.style.display = "";
-//         } else {
-//             ov.style.display = "none";
-//         }
-//     });
-//     document.getElementById("slide-overlay").addEventListener("mouseout", function(e) {
-//         var ov = document.getElementById("slide-overlay");
-//         ov.style.display = "none";
-//     });
-//
+        window.addEventListener("keydown", function(e) {
+            e = e || window.event;
+            if(e.keyCode === 37 /*|| e.keyCode === 38*/) {
+                e.preventDefault();
+                prev();
+            } else if(e.keyCode == 39 /*|| e.keyCode === 40*/) {
+                e.preventDefault();
+                next();
+            }
+        });
 
-    next();
+        img.addEventListener("touchstart", move);
+        img.addEventListener("touchend", stop);
+        img.addEventListener("touchmove", function(e) {
+            e.preventDefault()
+        }, false);
 
-    })();
-</script>
-
-
-</html>
+        redraw();
+    };
+    
