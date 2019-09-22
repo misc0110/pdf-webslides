@@ -232,11 +232,7 @@ div#footer {
     }
 
     function done() {
-//         if(!presenter) {
-            window.opener.postMessage({"action": "close", "data": null}, "*");
-            window.open("about:blank");
-//         }
-        return "Bye bye";
+        window.opener.postMessage({"action": "close", "data": null}, "*");
     }
     
     function init() {
@@ -277,10 +273,10 @@ div#footer {
 
         window.addEventListener("keydown", function(e) {
             e = e || window.event;
-            if(e.keyCode === 37 /*|| e.keyCode === 38*/) {
+            if(e.keyCode === 37 || e.keyCode === 33 /*|| e.keyCode === 38*/) {
                 e.preventDefault();
                 prev();
-            } else if(e.keyCode == 39 /*|| e.keyCode === 40*/) {
+            } else if(e.keyCode == 39 || e.keyCode === 34 /*|| e.keyCode === 40*/) {
                 e.preventDefault();
                 if(!timer_running) {
                     timer_running = true;
@@ -333,7 +329,7 @@ div#footer {
         /*if(!presenter)*/ window.addEventListener("message", receiveMessage, false);
        
         window.onunload = function(e) {
-            return done();
+            done();
         };
         
         redraw();
