@@ -233,6 +233,10 @@ div#footer {
                     start_time = Date.now();
                 }
                 next();
+            } else if(e.keyCode == 36) {
+                goto(0);
+            } else if(e.keyCode == 35) {
+                goto(slide_img.length - 2);
             } else if(e.key == "+") {
                 font_size += 10;
                 document.getElementById("slide-annot").style.fontSize = font_size + "%";
@@ -258,6 +262,11 @@ div#footer {
                     }
                 }
                 redraw();
+            } else if(e.key == "g") {
+                var new_slide = parseInt(prompt("Go to slide", slide + 1));
+                if(!isNaN(new_slide) && new_slide >= 1 && new_slide <= slide_img.length - 1) {
+                    goto(new_slide - 1);
+                }
             } else console.log(e.keyCode);
         });
 
