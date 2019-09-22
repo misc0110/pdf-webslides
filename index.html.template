@@ -22,19 +22,30 @@ img#slide-next {
 #freeze {
     color: white;
 }
+div#timer {
+    position: absolute;
+    bottom: 0px; 
+    color: white;
+    font-size: 3em;
+    cursor: hand;
+}
 </style>
 </head>
 <body onload="init()">
 <img id="slide" width="100%"/>
 <img id="slide-next" style="display: none;"/><span id="slide-annot" style="display: none;"></span>
-<input type="button" onclick="open_slides()" value="Open slides" style="display: none;" id="open-btn" />
+<input type="button" onclick="openSlides()" value="Open slides" style="display: none;" id="open-btn" />
 <div><span style="display: none;" id="freeze">Freeze</span></div>
+<div style="display: none;" id="timer" onclick="setTimer()">00:00</div>
 <script>
     var slide = 0;
     var x = 0;
     var presenter = false;
     var slides = null;
     var freeze = false;
+    var duration = 0;
+    var start_time = 0;
+    var timer_running = false;
 
     function next() {
         if(slide < slide_img.length - 2) slide++;
@@ -68,6 +79,39 @@ img#slide-next {
                     slides.postMessage({"action": "goto", "data": slide}, "*");
                 }
             }
+            
+            presentationTimer();
+        }
+    }
+    
+    function setTimer() {
+        var new_duration = parseInt(window.prompt("Presentation duration (in minutes)", Math.floor(duration / 60 / 1000))) * 60 * 1000;
+        if(!isNaN(new_duration)) duration = new_duration;
+    }
+    
+    function formatTime(ms) {
+        var neg = false;
+        if(ms < 0) {
+            neg = true;
+            ms = -ms;
+        }
+        ms /= 1000;
+        var sec = Math.floor(ms % 60).toString();
+        if(sec.length == 1) sec = "0" + sec;
+        var min = Math.floor(ms / 60).toString();
+        if(min.length == 1) min = "0" + min;
+        return (neg ? "-" : "") + min + ":" + sec;        
+    }
+    
+    function presentationTimer() {
+        if(!timer_running) return;
+        if(start_time == 0) return;
+        var running = Date.now() - start_time;
+        var tdisp = document.getElementById("timer");
+        if(duration != 0) {
+            tdisp.innerHTML = formatTime(duration - running);
+        } else {
+            tdisp.innerHTML = formatTime(running);
         }
     }
 
@@ -88,7 +132,7 @@ img#slide-next {
         else next();
     }
 
-    function open_slides() {
+    function openSlides() {
         slides = window.open(document.location.href.replace(/\?presenter/g, "?presentslides"));
         try {
             slides.goto(slide);
@@ -117,6 +161,8 @@ img#slide-next {
             document.getElementById("open-btn").style.display = "block";
             document.getElementById("slide-next").style.display = "block";
             document.getElementById("slide-annot").style.display = "";
+            document.getElementById("timer").style.display = "";
+            window.setInterval(presentationTimer, 1000);
         }
         var img = document.getElementById("slide");
         img.addEventListener('wheel', function(e) {
@@ -136,6 +182,10 @@ img#slide-next {
                 prev();
             } else if(e.keyCode == 39 /*|| e.keyCode === 40*/) {
                 e.preventDefault();
+                if(!timer_running) {
+                    timer_running = true;
+                    start_time = Date.now();
+                }
                 next();
             } else if(e.key == "+") {
                 font_size += 10;
@@ -147,7 +197,10 @@ img#slide-next {
                 freeze = !freeze;
                 document.getElementById("freeze").style.display = freeze ? "" : "none";
                 redraw();
-                
+            } else if(e.key == "r") {
+                start_time = Date.now();
+                redraw();
+                timer_running = false;
             } else console.log(e.keyCode);
         });
 
