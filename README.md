@@ -6,10 +6,17 @@ TODO: multi-monitor screenshot
 
 # Usage
 
+The first step is to convert a PDF to an HTML5 file. This is simply done by running
+
+    pdf-webslides <pdf file>
+    
+The output is a standalone `index.html` file in the current directory. If opened, it shows the slides in the same way as the original PDF. Slides can simply be navigated using left/right arrow keys, page-up/page-down keys, as well as by swiping over the slides. 
+
+## Presenter Mode
+
 TODO
 
-# Keyboard Shortcuts
-
+## Keyboard Shortcuts
 
 | Key | Description |
 |--|--|
@@ -24,6 +31,11 @@ TODO
 | f   | Freeze/unfreeze presentation view. Any change in the presenter mode is not shown on the presentation view |
 | r   | Reset timer |
 | p   | Display/hide a pointer (i.e., a virtual laser pointer) |
+
+## Notes
+
+The tool supports the same type of notes as pdfpc. Hence, they can also be directly embedded in LaTeX beamer. 
+If there are notes in the PDF, they are shown below the preview of the next slide. 
 
 # Compilation
 
