@@ -103,10 +103,22 @@ int convert(PopplerPage *page, const char *fname, char** comments) {
         strncat(comm, cont, 1024);
         strncat(comm, "\n", 1024);
         g_free(cont);
-    }
+    } 
   }
   *comments = comm;
   poppler_page_free_annot_mapping(annot_list);  
+  
+  GList* link_list = poppler_page_get_link_mapping(page);
+  for (s = link_list; s != NULL; s = s->next) {
+    PopplerLinkMapping* m = (PopplerLinkMapping *)s->data; 
+    PopplerAction* a = m->action;
+    if(a->type == POPPLER_ACTION_LAUNCH) {
+        PopplerActionLaunch* launch = (PopplerActionLaunch*)a;
+        printf("\n\n%s\n", launch->file_name);        
+        // TODO: handle embedded video
+    }
+  }
+  poppler_page_free_link_mapping(link_list);
     
   cairo_show_page(img);
 

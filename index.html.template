@@ -5,6 +5,8 @@ body, html {
     margin: 0;
     padding: 0;
     background-color: #000;
+    overflow-x: hidden;
+    overflow-y: auto;
 }
 img#slide {
     float: left;
