@@ -9,7 +9,7 @@
 #include <stdint.h>
 #include "colorprint_header.h"
 
-#define NO_SLIDES 1
+#define NO_SLIDES 0
 
 #define TAG_OK "[lg][+][/lg] "
 #define TAG_INFO "[ly][*][/ly] "
@@ -119,9 +119,8 @@ int convert(PopplerPage *page, const char *fname, char** comments, char** videos
     PopplerAction* a = m->action;
     if(a->type == POPPLER_ACTION_LAUNCH) {
         PopplerActionLaunch* launch = (PopplerActionLaunch*)a;
-        printf("\n\n%s\n", launch->file_name);    
+//         printf("\n\n%s\n", launch->file_name);    
         *videos = strdup(launch->file_name);
-//         // TODO: handle embedded video
     }
   }
   poppler_page_free_link_mapping(link_list);

@@ -130,9 +130,11 @@ div#footer {
             slideType("video");
 
             var url = atob(slide_video[slide]);
-            console.log("found video " + url);
+//             console.log("found video " + url);
             var video_elem = document.getElementById("video");
             video_elem.innerHTML = "<source src=\"" + url + "\">";
+            video_elem.poster = "data:image/svg+xml;base64," + slide_img[slide];
+            video_elem.load();
             video_elem.pause();
             video_elem.currentTime = 0;
             if(url.indexOf("?autostart") != -1 /*&& !presenter*/) {
