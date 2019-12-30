@@ -8,7 +8,7 @@ body, html {
     overflow-x: hidden;
     overflow-y: auto;
 }
-img#slide {
+img#slide, video#video {
     float: left;
 }
 img#slide-next {
@@ -17,7 +17,7 @@ img#slide-next {
 #slide-annot {
     color: white;
     font-size: 200%;
-    white-space: pre;
+    white-space: pre-wrap;
     font-family: 'sans serif',Verdana,Arial;
     margin: 1em;
 }
