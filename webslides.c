@@ -9,6 +9,8 @@
 #include <stdint.h>
 #include "colorprint_header.h"
 
+#define NO_SLIDES 1
+
 #define TAG_OK "[lg][+][/lg] "
 #define TAG_INFO "[ly][*][/ly] "
 #define TAG_FAIL "[bw][red]%d[/red][/bw] "
@@ -81,7 +83,7 @@ char* encode(char* fname) {
     return out;
 }
 
-int convert(PopplerPage *page, const char *fname, char** comments) {
+int convert(PopplerPage *page, const char *fname, char** comments, char** videos) {
   cairo_surface_t *surface;
   cairo_t *img;
   double width, height;
@@ -100,22 +102,26 @@ int convert(PopplerPage *page, const char *fname, char** comments) {
     int type = poppler_annot_get_annot_type(m->annot);
     if(type == 1) {
         char* cont = poppler_annot_get_contents(m->annot);
-        strncat(comm, cont, 1024);
-        strncat(comm, "\n", 1024);
-        g_free(cont);
+        if(cont) {
+            strncat(comm, cont, 1024);
+            strncat(comm, "\n", 1024);
+            g_free(cont);
+        }
     } 
   }
   *comments = comm;
   poppler_page_free_annot_mapping(annot_list);  
   
+  *videos = NULL;
   GList* link_list = poppler_page_get_link_mapping(page);
   for (s = link_list; s != NULL; s = s->next) {
     PopplerLinkMapping* m = (PopplerLinkMapping *)s->data; 
     PopplerAction* a = m->action;
     if(a->type == POPPLER_ACTION_LAUNCH) {
         PopplerActionLaunch* launch = (PopplerActionLaunch*)a;
-        printf("\n\n%s\n", launch->file_name);        
-        // TODO: handle embedded video
+        printf("\n\n%s\n", launch->file_name);    
+        *videos = strdup(launch->file_name);
+//         // TODO: handle embedded video
     }
   }
   poppler_page_free_link_mapping(link_list);
@@ -175,17 +181,41 @@ int main(int argc, char *args[]) {
   char* annotations[pages];
   memset(annotations, 0, sizeof(annotations));
   
+  // videos
+  char* videos[pages];
+  memset(videos, 0, sizeof(pages));
+  
   // add inline images
   fprintf(output, "var slide_img = [\n");
   for (int p = 0; p < pages; p++) {
     page = poppler_document_get_page(pdffile, p);
-    convert(page, "slide.svg", &(annotations[p]));
+    convert(page, "slide.svg", &(annotations[p]), &(videos[p]));
     progress_update(1);
+#if NO_SLIDES
+    char* b64 = "PHN2ZyBoZWlnaHQ9JzEwMHB4JyB3aWR0aD0nMTAwcHgnICBmaWxsPSIjZmZmZmZmIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGRhdGEtbmFtZT0iTGF5ZXIgMSIgdmlld0JveD0iMCAwIDI0IDI0IiB4PSIwcHgiIHk9IjBweCI+PHRpdGxlPnN2Zyw8L3RpdGxlPjxwYXRoIGQ9Ik0yMS41LDEzLjUyN2EuNi42LDAsMCwxLS40MjQuNzM1bC0yLjcwNy43MjVMMjAuOTYsMTYuNDhhLjYuNiwwLDEsMS0uNiwxLjAzOWwtMi41ODYtMS40OTMuNzI1LDIuNzA4YS42LjYsMCwwLDEtLjQyNC43MzUuNjExLjYxMSwwLDAsMS0uMTU1LjAyMS42LjYsMCwwLDEtLjU3OS0uNDQ1bC0xLjAzNS0zLjg2NkwxMi42LDEzLjAzOXY0LjI3OGwyLjgzLDIuODNhLjYuNiwwLDEsMS0uODQ4Ljg0OUwxMi42LDE5LjAxNFYyMmEuNi42LDAsMSwxLTEuMiwwVjE5LjAxNEw5LjQxOCwyMWEuNi42LDAsMSwxLS44NDgtLjg0OWwyLjgzLTIuODNWMTMuMDM5bC0zLjcwNiwyLjE0TDYuNjU5LDE5LjA0NGEuNi42LDAsMCwxLS41NzkuNDQ1LjYxMS42MTEsMCwwLDEtLjE1NS0uMDIxLjYuNiwwLDAsMS0uNDI0LS43MzVsLjcyNS0yLjcwOEwzLjY0LDE3LjUyYS42LjYsMCwxLDEtLjYtMS4wMzlsMi41ODYtMS40OTMtMi43MDctLjcyNUEuNi42LDAsMCwxLDMuMjI5LDEzLjFMNy4xLDE0LjEzOSwxMC44LDEyLDcuMSw5Ljg2MSwzLjIyOSwxMC45YS42MTEuNjExLDAsMCwxLS4xNTUuMDIxLjYuNiwwLDAsMS0uMTU1LTEuMThsMi43MDctLjcyNUwzLjA0LDcuNTJhLjYuNiwwLDAsMSwuNi0xLjAzOUw2LjIyNiw3Ljk3NCw1LjUsNS4yNjZhLjYuNiwwLDEsMSwxLjE1OC0uMzExTDcuNjk0LDguODIxbDMuNzA2LDIuMTRWNi42ODNMOC41NywzLjg1M0EuNi42LDAsMCwxLDkuNDE4LDNMMTEuNCw0Ljk4NlYyYS42LjYsMCwxLDEsMS4yLDBWNC45ODZMMTQuNTgyLDNhLjYuNiwwLDAsMSwuODQ4Ljg0OUwxMi42LDYuNjgzdjQuMjc4bDMuNzA2LTIuMTQsMS4wMzUtMy44NjZhLjYuNiwwLDEsMSwxLjE1OC4zMTFsLS43MjUsMi43MDhMMjAuMzYsNi40OGEuNi42LDAsMCwxLC42LDEuMDM5TDE4LjM3NCw5LjAxM2wyLjcwNy43MjVhLjYuNiwwLDAsMS0uMTU1LDEuMTguNjExLjYxMSwwLDAsMS0uMTU1LS4wMjFMMTYuOSw5Ljg2MSwxMy4yLDEybDMuNywyLjEzOUwyMC43NzEsMTMuMUEuNi42LDAsMCwxLDIxLjUsMTMuNTI3WiI+PC9wYXRoPjwvc3ZnPg==";
+#else
     char* b64 = encode("slide.svg");
+#endif
     fprintf(output, "\"%s\",\n", b64);
+#if !NO_SLIDES
     free(b64);
+#endif
   }
   fprintf(output, "0];\n");
+  
+  // add videos
+  fprintf(output, "var slide_video = [\n");
+  for(int p = 0; p < pages; p++) {
+      char enc[1024];
+      if(!videos[p]) {
+        strcpy(enc, "");
+      } else {
+        base64encode(videos[p], strlen(videos[p]), enc, sizeof(enc));
+      }
+      fprintf(output, "\"%s\",\n", enc);
+      free(videos[p]);
+  }
+  fprintf(output, "\"\"];\n");
   
   // add annotations
   fprintf(output, "var slide_annot = [\n");
