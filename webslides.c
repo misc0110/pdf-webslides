@@ -19,10 +19,10 @@ static getopt_arg_t cli_options[] =
 {
         {"single",    no_argument,       NULL, 's', "Create a single file", NULL},
         {"presenter", no_argument,       NULL, 'p', "Include presenter", NULL},
+        {"output",    required_argument, NULL, 'o', "Output file name", "FILENAME"}, 
         {"help",      no_argument,       NULL, 'h', "Show this help.",       NULL},
         {NULL, 0,                        NULL, 0, NULL,                      NULL}
 };
-
 
 
 int convert(PopplerPage *page, const char *fname, SlideInfo* info) {
@@ -74,13 +74,14 @@ int convert(PopplerPage *page, const char *fname, SlideInfo* info) {
   return 0;
 }
 
+
 void progress_cb(int slide) {
     progress_update(1);
 }
 
 
 int main(int argc, char *argv[]) {
-  Options options;
+  Options options = {.single = 0, .presenter = 0, .name = NULL};
   PopplerDocument *pdffile;
   PopplerPage *page;
   char abspath[PATH_MAX];
@@ -112,7 +113,9 @@ int main(int argc, char *argv[]) {
   int pages = poppler_document_get_n_pages(pdffile);
   printf_color(1, TAG_OK "Loaded %d slides\n", pages);
   
-  FILE* output = fopen("index.html", "w");
+  char fname[1024];
+  snprintf(fname, sizeof(fname), "%s.html", options.name ? options.name : "index");
+  FILE* output = fopen(fname, "w");
   if(!output) {
       printf_color(1, TAG_FAIL "Could not create output file [m]index.html[/m]\n");
       return 1;
@@ -134,10 +137,9 @@ int main(int argc, char *argv[]) {
   SlideInfo info[pages];
   
   // create slide data
-//   fprintf(output, "var slide_img = [\n");
   for (int p = 0; p < pages; p++) {
     page = poppler_document_get_page(pdffile, p);
-    convert(page, "slide.svg", &(info[p])); //&(annotations[p]), &(videos[p]));
+    convert(page, "slide.svg", &(info[p])); 
     progress_update(1);
 #if NO_SLIDES
     char* b64 = strdup(empty_img);
@@ -147,17 +149,33 @@ int main(int argc, char *argv[]) {
     info[p].slide = b64;
   }
   
-  template = replace_string_first(template, "{{script}}", "<script type='text/javascript'>\n"
-    "var slide_info = {"
-    "'slides': {{slides}},\n"
-    "'videos': {{videos}},\n"
-    "'annotations': {{annotations}}\n"
-    "};\n"
-    "</script>");
+  char* slide_data = encode_array(info, 2, pages, 0, progress_cb);
+  char* video_data = encode_array(info, 1, pages, 1, progress_cb);
+  char* annot_data = encode_array(info, 0, pages, 1, progress_cb);
   
-  template = replace_string_first(template, "{{slides}}", encode_array(info, 2, pages, 0, progress_cb));
-  template = replace_string_first(template, "{{videos}}", encode_array(info, 1, pages, 1, progress_cb));
-  template = replace_string_first(template, "{{annotations}}", encode_array(info, 0, pages, 1, progress_cb));
+  if(options.single) {
+    template = replace_string_first(template, "{{script}}", "<script type='text/javascript'>\n"
+        "var slide_info = {"
+        "'slides': {{slides}},\n"
+        "'videos': {{videos}},\n"
+        "'annotations': {{annotations}}\n"
+        "};\n"
+        "</script>");
+    
+    template = replace_string_first(template, "{{slides}}", slide_data);
+    template = replace_string_first(template, "{{videos}}", video_data);
+    template = replace_string_first(template, "{{annotations}}", annot_data);
+  } else {
+    char include[1024];
+    snprintf(include, sizeof(include), "<script type='text/javascript' src='%s.js'></script>\n", options.name ? options.name : "slides");
+    template = replace_string_first(template, "{{script}}", include);
+    snprintf(include, sizeof(include), "%s.js", options.name ? options.name : "slides");
+    FILE* f = fopen(include, "w");
+    fprintf(f, "var slide_info = {'slides': %s,\n'videos': %s,\n'annotations': %s\n};\n", slide_data, video_data, annot_data);
+    fclose(f);
+  }
+  
+  
   
   unlink("slide.svg");
   

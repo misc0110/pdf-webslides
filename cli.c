@@ -64,7 +64,7 @@ void show_usage(char *binary, getopt_arg_t* cli_options) {
 int parse_cli_options(Options* options, getopt_arg_t* cli_options, int argc, char* argv[]) {
     struct option *long_options = getopt_get_long_options((getopt_arg_t *) cli_options);
     int c;
-    while ((c = getopt_long(argc, argv, ":sp", long_options, NULL)) != EOF) {
+    while ((c = getopt_long(argc, argv, ":spo:", long_options, NULL)) != EOF) {
         switch (c) {
             case 's':
                 options->single = 1;
@@ -74,6 +74,9 @@ int parse_cli_options(Options* options, getopt_arg_t* cli_options, int argc, cha
                 return 1;
             case 'p':
                 options->presenter = 1;
+                break;
+            case 'o':
+                options->name = strdup(optarg);
                 break;
             case ':':
                 printf("Option -%c requires an argument.\n",
