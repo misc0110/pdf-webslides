@@ -11,24 +11,21 @@
 #include "cli.h"
 #include "res.h"
 #include "utils.h"
+#include "webslides.h"
 
 #define NO_SLIDES 0
 
-#define TAG_OK "[lg][+][/lg] "
-#define TAG_INFO "[ly][*][/ly] "
-#define TAG_FAIL "[bw][red][-][/red][/bw] "
-
 static getopt_arg_t cli_options[] =
-        {
-                {"single",    no_argument,       NULL, 's', "Create a single file", NULL},
-                {"presenter", no_argument,       NULL, 'p', "Include presenter", NULL},
-                {"help",      no_argument,       NULL, 'h', "Show this help.",       NULL},
-                {NULL, 0,                        NULL, 0, NULL,                      NULL}
-        };
+{
+        {"single",    no_argument,       NULL, 's', "Create a single file", NULL},
+        {"presenter", no_argument,       NULL, 'p', "Include presenter", NULL},
+        {"help",      no_argument,       NULL, 'h', "Show this help.",       NULL},
+        {NULL, 0,                        NULL, 0, NULL,                      NULL}
+};
 
 
 
-int convert(PopplerPage *page, const char *fname, char** comments, char** videos) {
+int convert(PopplerPage *page, const char *fname, SlideInfo* info) {
   cairo_surface_t *surface;
   cairo_t *img;
   double width, height;
@@ -54,10 +51,10 @@ int convert(PopplerPage *page, const char *fname, char** comments, char** videos
         }
     } 
   }
-  *comments = comm;
+  info->annotations = comm;
   poppler_page_free_annot_mapping(annot_list);  
   
-  *videos = NULL;
+  info->videos = NULL;
   GList* link_list = poppler_page_get_link_mapping(page);
   for (s = link_list; s != NULL; s = s->next) {
     PopplerLinkMapping* m = (PopplerLinkMapping *)s->data; 
@@ -65,7 +62,7 @@ int convert(PopplerPage *page, const char *fname, char** comments, char** videos
     if(a->type == POPPLER_ACTION_LAUNCH) {
         PopplerActionLaunch* launch = (PopplerActionLaunch*)a;
 //         printf("\n\n%s\n", launch->file_name);    
-        *videos = strdup(launch->file_name);
+        info->videos = strdup(launch->file_name);
     }
   }
   poppler_page_free_link_mapping(link_list);
@@ -131,19 +128,13 @@ int main(int argc, char *argv[]) {
     fprintf(output, "%s", line);
   }
 
-  // annotations
-  char* annotations[pages];
-  memset(annotations, 0, sizeof(annotations));
-  
-  // videos
-  char* videos[pages];
-  memset(videos, 0, sizeof(pages));
+  SlideInfo info[pages];
   
   // add inline images
   fprintf(output, "var slide_img = [\n");
   for (int p = 0; p < pages; p++) {
     page = poppler_document_get_page(pdffile, p);
-    convert(page, "slide.svg", &(annotations[p]), &(videos[p]));
+    convert(page, "slide.svg", &(info[p])); //&(annotations[p]), &(videos[p]));
     progress_update(1);
 #if NO_SLIDES
     char* b64 = empty_img;
@@ -161,13 +152,13 @@ int main(int argc, char *argv[]) {
   fprintf(output, "var slide_video = [\n");
   for(int p = 0; p < pages; p++) {
       char enc[1024];
-      if(!videos[p]) {
+      if(!info[p].videos) {
         strcpy(enc, "");
       } else {
-        base64encode(videos[p], strlen(videos[p]), enc, sizeof(enc));
+        base64encode(info[p].videos, strlen(info[p].videos), enc, sizeof(enc));
       }
       fprintf(output, "\"%s\",\n", enc);
-      free(videos[p]);
+      free(info[p].videos);
   }
   fprintf(output, "\"\"];\n");
   
@@ -175,9 +166,9 @@ int main(int argc, char *argv[]) {
   fprintf(output, "var slide_annot = [\n");
   for(int p = 0; p < pages; p++) {
       char enc[1024];
-      base64encode(annotations[p], strlen(annotations[p]), enc, sizeof(enc));
+      base64encode(info[p].annotations, strlen(info[p].annotations), enc, sizeof(enc));
       fprintf(output, "\"%s\",\n", enc);
-      free(annotations[p]);
+      free(info[p].annotations);
   }
   fprintf(output, "\"\"];</script>\n");
   unlink("slide.svg");
