@@ -17,6 +17,7 @@ typedef struct __attribute__((packed)) {
 typedef struct {
     int single;
     int presenter;
+    int nonotes;
     char* name;
 } Options;
 

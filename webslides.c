@@ -17,10 +17,11 @@
 
 static getopt_arg_t cli_options[] =
 {
-        {"single",    no_argument,       NULL, 's', "Create a single file", NULL},
-        {"presenter", no_argument,       NULL, 'p', "Start in presenter mode", NULL},
-        {"output",    required_argument, NULL, 'o', "Output file name", "FILENAME"}, 
-        {"help",      no_argument,       NULL, 'h', "Show this help.",       NULL},
+        {"single",       no_argument,       NULL, 's', "Create a single file", NULL},
+        {"presenter",    no_argument,       NULL, 'p', "Start in presenter mode", NULL},
+        {"output",       required_argument, NULL, 'o', "Output file name", "FILENAME"}, 
+        {"disablenotes", no_argument,       NULL, 'n', "Do not include notes", NULL},
+        {"help",         no_argument,       NULL, 'h', "Show this help.",       NULL},
         {NULL, 0,                        NULL, 0, NULL,                      NULL}
 };
 
@@ -81,7 +82,7 @@ void progress_cb(int slide) {
 
 
 int main(int argc, char *argv[]) {
-  Options options = {.single = 0, .presenter = 0, .name = NULL};
+  Options options = {.single = 0, .presenter = 0, .nonotes = 0, .name = NULL};
   PopplerDocument *pdffile;
   PopplerPage *page;
   char abspath[PATH_MAX];
@@ -140,6 +141,10 @@ int main(int argc, char *argv[]) {
   for (int p = 0; p < pages; p++) {
     page = poppler_document_get_page(pdffile, p);
     convert(page, "slide.svg", &(info[p])); 
+    if(options.nonotes) {
+        free(info[p].annotations);
+        info[p].annotations = "";
+    }
     progress_update(1);
 #if NO_SLIDES
     char* b64 = strdup(empty_img);
