@@ -8,80 +8,25 @@
 #include <string.h>
 #include <stdint.h>
 #include "colorprint_header.h"
+#include "cli.h"
+#include "res.h"
+#include "utils.h"
 
 #define NO_SLIDES 0
 
 #define TAG_OK "[lg][+][/lg] "
 #define TAG_INFO "[ly][*][/ly] "
-#define TAG_FAIL "[bw][red]%d[/red][/bw] "
+#define TAG_FAIL "[bw][red][-][/red][/bw] "
 
-int base64encode(const void* data_buf, size_t dataLength, char* result, size_t resultSize)
-{
-   const char base64chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-   const uint8_t *data = (const uint8_t *)data_buf;
-   size_t resultIndex = 0;
-   size_t x;
-   uint32_t n = 0;
-   int padCount = dataLength % 3;
-   uint8_t n0, n1, n2, n3;
+static getopt_arg_t cli_options[] =
+        {
+                {"single",    no_argument,       NULL, 's', "Create a single file", NULL},
+                {"presenter", no_argument,       NULL, 'p', "Include presenter", NULL},
+                {"help",      no_argument,       NULL, 'h', "Show this help.",       NULL},
+                {NULL, 0,                        NULL, 0, NULL,                      NULL}
+        };
 
-   for (x = 0; x < dataLength; x += 3) 
-   {
-      n = ((uint32_t)data[x]) << 16;
-      
-      if((x+1) < dataLength)
-         n += ((uint32_t)data[x+1]) << 8;
-      
-      if((x+2) < dataLength)
-         n += data[x+2];
 
-      n0 = (uint8_t)(n >> 18) & 63;
-      n1 = (uint8_t)(n >> 12) & 63;
-      n2 = (uint8_t)(n >> 6) & 63;
-      n3 = (uint8_t)n & 63;
-            
-      if(resultIndex >= resultSize) return 1;
-      result[resultIndex++] = base64chars[n0];
-      if(resultIndex >= resultSize) return 1;
-      result[resultIndex++] = base64chars[n1];
-
-      if((x+1) < dataLength)
-      {
-         if(resultIndex >= resultSize) return 1;
-         result[resultIndex++] = base64chars[n2];
-      }
-      if((x+2) < dataLength)
-      {
-         if(resultIndex >= resultSize) return 1;
-         result[resultIndex++] = base64chars[n3];
-      }
-   }
-   if (padCount > 0) 
-   { 
-      for (; padCount < 3; padCount++) 
-      { 
-         if(resultIndex >= resultSize) return 1;
-         result[resultIndex++] = '=';
-      } 
-   }
-   if(resultIndex >= resultSize) return 1;
-   result[resultIndex] = 0;
-   return 0;
-}
-
-char* encode(char* fname) {
-    FILE* f = fopen(fname, "rb");
-    fseek(f, 0, SEEK_END);
-    size_t s = ftell(f);
-    fseek(f, 0, SEEK_SET);
-    char* in = malloc(s);
-    fread(in, s, 1, f);
-    fclose(f);
-    char* out = malloc(s * 2 + 8);
-    base64encode(in, s, out, s * 2 + 8);
-    free(in);
-    return out;
-}
 
 int convert(PopplerPage *page, const char *fname, char** comments, char** videos) {
   cairo_surface_t *surface;
@@ -132,18 +77,28 @@ int convert(PopplerPage *page, const char *fname, char** comments, char** videos
   return 0;
 }
 
-int main(int argc, char *args[]) {
+int main(int argc, char *argv[]) {
+  Options options;
   PopplerDocument *pdffile;
   PopplerPage *page;
   char abspath[PATH_MAX];
   char fname_uri[PATH_MAX];
 
-  if (argc != 2) {
-    printf_color(1, "Usage: webslides <in file.pdf>\n");
-    return -1;
+  if(argc <= 1) {
+    show_usage(argv[0], &options);
+    return 1;
+  }
+  if(parse_cli_options(&options, cli_options, argc, argv)) {
+    return 1;
+  }
+  
+  const char* input = argv[argc - 1];
+  if(access(input, F_OK ) == -1) {
+    printf_color(1, TAG_FAIL "Could not open file '%s'\n", input);
+    return 1;
   }
 
-  realpath(args[1], abspath);
+  realpath(input, abspath);
   snprintf(fname_uri, PATH_MAX, "file://%s", abspath);
 
   pdffile = poppler_document_new_from_file(fname_uri, NULL, NULL);
@@ -191,9 +146,9 @@ int main(int argc, char *args[]) {
     convert(page, "slide.svg", &(annotations[p]), &(videos[p]));
     progress_update(1);
 #if NO_SLIDES
-    char* b64 = "PHN2ZyBoZWlnaHQ9JzEwMHB4JyB3aWR0aD0nMTAwcHgnICBmaWxsPSIjZmZmZmZmIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGRhdGEtbmFtZT0iTGF5ZXIgMSIgdmlld0JveD0iMCAwIDI0IDI0IiB4PSIwcHgiIHk9IjBweCI+PHRpdGxlPnN2Zyw8L3RpdGxlPjxwYXRoIGQ9Ik0yMS41LDEzLjUyN2EuNi42LDAsMCwxLS40MjQuNzM1bC0yLjcwNy43MjVMMjAuOTYsMTYuNDhhLjYuNiwwLDEsMS0uNiwxLjAzOWwtMi41ODYtMS40OTMuNzI1LDIuNzA4YS42LjYsMCwwLDEtLjQyNC43MzUuNjExLjYxMSwwLDAsMS0uMTU1LjAyMS42LjYsMCwwLDEtLjU3OS0uNDQ1bC0xLjAzNS0zLjg2NkwxMi42LDEzLjAzOXY0LjI3OGwyLjgzLDIuODNhLjYuNiwwLDEsMS0uODQ4Ljg0OUwxMi42LDE5LjAxNFYyMmEuNi42LDAsMSwxLTEuMiwwVjE5LjAxNEw5LjQxOCwyMWEuNi42LDAsMSwxLS44NDgtLjg0OWwyLjgzLTIuODNWMTMuMDM5bC0zLjcwNiwyLjE0TDYuNjU5LDE5LjA0NGEuNi42LDAsMCwxLS41NzkuNDQ1LjYxMS42MTEsMCwwLDEtLjE1NS0uMDIxLjYuNiwwLDAsMS0uNDI0LS43MzVsLjcyNS0yLjcwOEwzLjY0LDE3LjUyYS42LjYsMCwxLDEtLjYtMS4wMzlsMi41ODYtMS40OTMtMi43MDctLjcyNUEuNi42LDAsMCwxLDMuMjI5LDEzLjFMNy4xLDE0LjEzOSwxMC44LDEyLDcuMSw5Ljg2MSwzLjIyOSwxMC45YS42MTEuNjExLDAsMCwxLS4xNTUuMDIxLjYuNiwwLDAsMS0uMTU1LTEuMThsMi43MDctLjcyNUwzLjA0LDcuNTJhLjYuNiwwLDAsMSwuNi0xLjAzOUw2LjIyNiw3Ljk3NCw1LjUsNS4yNjZhLjYuNiwwLDEsMSwxLjE1OC0uMzExTDcuNjk0LDguODIxbDMuNzA2LDIuMTRWNi42ODNMOC41NywzLjg1M0EuNi42LDAsMCwxLDkuNDE4LDNMMTEuNCw0Ljk4NlYyYS42LjYsMCwxLDEsMS4yLDBWNC45ODZMMTQuNTgyLDNhLjYuNiwwLDAsMSwuODQ4Ljg0OUwxMi42LDYuNjgzdjQuMjc4bDMuNzA2LTIuMTQsMS4wMzUtMy44NjZhLjYuNiwwLDEsMSwxLjE1OC4zMTFsLS43MjUsMi43MDhMMjAuMzYsNi40OGEuNi42LDAsMCwxLC42LDEuMDM5TDE4LjM3NCw5LjAxM2wyLjcwNy43MjVhLjYuNiwwLDAsMS0uMTU1LDEuMTguNjExLjYxMSwwLDAsMS0uMTU1LS4wMjFMMTYuOSw5Ljg2MSwxMy4yLDEybDMuNywyLjEzOUwyMC43NzEsMTMuMUEuNi42LDAsMCwxLDIxLjUsMTMuNTI3WiI+PC9wYXRoPjwvc3ZnPg==";
+    char* b64 = empty_img;
 #else
-    char* b64 = encode("slide.svg");
+    char* b64 = encode_file_base64("slide.svg");
 #endif
     fprintf(output, "\"%s\",\n", b64);
 #if !NO_SLIDES
