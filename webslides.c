@@ -74,15 +74,20 @@ int convert(PopplerPage *page, const char *fname, SlideInfo* info) {
   return 0;
 }
 
+void progress_cb(int slide) {
+    progress_update(1);
+}
+
+
 int main(int argc, char *argv[]) {
   Options options;
   PopplerDocument *pdffile;
   PopplerPage *page;
   char abspath[PATH_MAX];
-  char fname_uri[PATH_MAX];
+  char fname_uri[PATH_MAX + 32];
 
   if(argc <= 1) {
-    show_usage(argv[0], &options);
+    show_usage(argv[0], cli_options);
     return 1;
   }
   if(parse_cli_options(&options, cli_options, argc, argv)) {
@@ -96,7 +101,7 @@ int main(int argc, char *argv[]) {
   }
 
   realpath(input, abspath);
-  snprintf(fname_uri, PATH_MAX, "file://%s", abspath);
+  snprintf(fname_uri, sizeof(fname_uri), "file://%s", abspath);
 
   pdffile = poppler_document_new_from_file(fname_uri, NULL, NULL);
   if (pdffile == NULL) {
@@ -107,71 +112,57 @@ int main(int argc, char *argv[]) {
   int pages = poppler_document_get_n_pages(pdffile);
   printf_color(1, TAG_OK "Loaded %d slides\n", pages);
   
-  FILE* template = fopen("index.html.template", "r");
-  if(!template) {
-      printf_color(1, TAG_FAIL "Could not open template file [m]index.html.template[/m]\n");
-      return 1;
-  }
   FILE* output = fopen("index.html", "w");
   if(!output) {
       printf_color(1, TAG_FAIL "Could not create output file [m]index.html[/m]\n");
       return 1;
   }
-  size_t len = 0;
-  char* line = NULL;
   
   printf_color(1, TAG_INFO "Converting slides...\n");
-  progress_start(1, pages, NULL);  
+  progress_start(1, pages * 4, NULL);  
 
-  // copy template
-  while(getline(&line, &len, template) != -1) {
-    fprintf(output, "%s", line);
+  char* template = read_file("index.html.template");
+  if(!template) {
+    printf_color(1, TAG_FAIL "Could not open file [m]%s[/m]\n", "index.html.template");
+    return 1;
   }
+  
+  template = replace_string_first(template, "{{black.svg}}", encode_file_base64("black.svg"));
+  template = replace_string_first(template, "{{freeze.svg}}", encode_file_base64("freeze.svg"));
+  template = replace_string_first(template, "{{open.svg}}", encode_file_base64("open.svg"));
 
   SlideInfo info[pages];
   
-  // add inline images
-  fprintf(output, "var slide_img = [\n");
+  // create slide data
+//   fprintf(output, "var slide_img = [\n");
   for (int p = 0; p < pages; p++) {
     page = poppler_document_get_page(pdffile, p);
     convert(page, "slide.svg", &(info[p])); //&(annotations[p]), &(videos[p]));
     progress_update(1);
 #if NO_SLIDES
-    char* b64 = empty_img;
+    char* b64 = strdup(empty_img);
 #else
     char* b64 = encode_file_base64("slide.svg");
 #endif
-    fprintf(output, "\"%s\",\n", b64);
-#if !NO_SLIDES
-    free(b64);
-#endif
+    info[p].slide = b64;
   }
-  fprintf(output, "0];\n");
   
-  // add videos
-  fprintf(output, "var slide_video = [\n");
-  for(int p = 0; p < pages; p++) {
-      char enc[1024];
-      if(!info[p].videos) {
-        strcpy(enc, "");
-      } else {
-        base64encode(info[p].videos, strlen(info[p].videos), enc, sizeof(enc));
-      }
-      fprintf(output, "\"%s\",\n", enc);
-      free(info[p].videos);
-  }
-  fprintf(output, "\"\"];\n");
+  template = replace_string_first(template, "{{script}}", "<script type='text/javascript'>\n"
+    "var slide_info = {"
+    "'slides': {{slides}},\n"
+    "'videos': {{videos}},\n"
+    "'annotations': {{annotations}}\n"
+    "};\n"
+    "</script>");
   
-  // add annotations
-  fprintf(output, "var slide_annot = [\n");
-  for(int p = 0; p < pages; p++) {
-      char enc[1024];
-      base64encode(info[p].annotations, strlen(info[p].annotations), enc, sizeof(enc));
-      fprintf(output, "\"%s\",\n", enc);
-      free(info[p].annotations);
-  }
-  fprintf(output, "\"\"];</script>\n");
+  template = replace_string_first(template, "{{slides}}", encode_array(info, 2, pages, 0, progress_cb));
+  template = replace_string_first(template, "{{videos}}", encode_array(info, 1, pages, 1, progress_cb));
+  template = replace_string_first(template, "{{annotations}}", encode_array(info, 0, pages, 1, progress_cb));
+  
   unlink("slide.svg");
+  
+  fwrite(template, strlen(template), 1, output);
+  fclose(output);
   
   printf_color(1, TAG_OK "Done!\n");
   

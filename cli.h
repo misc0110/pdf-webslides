@@ -2,6 +2,7 @@
 #define GETOPT_HELPER_H
 
 #include <getopt.h>
+#include "webslides.h"
 
 // ---------------------------------------------------------------------------
 typedef struct {
@@ -14,12 +15,6 @@ typedef struct {
 } getopt_arg_t;
 
 
-// ---------------------------------------------------------------------------
-typedef struct {
-    int single;
-    int presenter;
-    char* pdf;
-} Options;
 
 
 // ---------------------------------------------------------------------------

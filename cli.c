@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <ctype.h>
 
 // ---------------------------------------------------------------------------
 struct option* getopt_get_long_options(getopt_arg_t* opt) {
