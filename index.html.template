@@ -355,7 +355,7 @@ div#footer {
         var font_size = 200;
     
     
-        if(document.location.href.indexOf("?presenter") != -1) {
+        if(document.location.href.indexOf("?presenter") != -1 || {{presenter}}) {
             presenter = true;
             document.getElementById("slide").style.width="70%";
             document.getElementById("video").style.width="70%";

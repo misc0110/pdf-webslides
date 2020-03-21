@@ -18,7 +18,7 @@
 static getopt_arg_t cli_options[] =
 {
         {"single",    no_argument,       NULL, 's', "Create a single file", NULL},
-        {"presenter", no_argument,       NULL, 'p', "Include presenter", NULL},
+        {"presenter", no_argument,       NULL, 'p', "Start in presenter mode", NULL},
         {"output",    required_argument, NULL, 'o', "Output file name", "FILENAME"}, 
         {"help",      no_argument,       NULL, 'h', "Show this help.",       NULL},
         {NULL, 0,                        NULL, 0, NULL,                      NULL}
@@ -175,7 +175,7 @@ int main(int argc, char *argv[]) {
     fclose(f);
   }
   
-  
+  template = replace_string_first(template, "{{presenter}}", options.presenter ? "true" : "false");
   
   unlink("slide.svg");
   
