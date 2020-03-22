@@ -10,5 +10,4 @@ extern unsigned char freeze_svg[];
 extern unsigned int open_svg_len;
 extern unsigned char open_svg[];
 
-
 #endif
