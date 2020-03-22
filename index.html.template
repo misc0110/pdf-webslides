@@ -281,7 +281,9 @@ div#footer {
     }
 
     function openSlides() {
-        slides = window.open(document.location.href.replace(/\?presenter/g, "?presentslides"));
+        var slide_url = document.location.href.replace(/\?presenter/g, "?presentslides");
+        if(presenter && slide_url.indexOf("presentslides") == -1) slide_url += "?presentslides";
+        slides = window.open(slide_url);
         try {
             slides.goto(slide);
         } catch(e) {
@@ -353,9 +355,9 @@ div#footer {
     
     function init() {
         var font_size = 200;
+        presenter = {{presenter}} && (document.location.href.indexOf("?presentslides") == -1);
     
-    
-        if(document.location.href.indexOf("?presenter") != -1 || {{presenter}}) {
+        if(document.location.href.indexOf("?presenter") != -1 || presenter) {
             presenter = true;
             document.getElementById("slide").style.width="70%";
             document.getElementById("video").style.width="70%";
