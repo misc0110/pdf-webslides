@@ -168,12 +168,7 @@ int main(int argc, char *argv[]) {
   printf_color(1, TAG_INFO "Converting slides...\n");
   progress_start(1, pages * 4, NULL);
 
-  char *template = read_file("index.html.template");
-  if (!template) {
-    printf_color(1, TAG_FAIL "Could not open file [m]%s[/m]\n",
-                 "index.html.template");
-    return 1;
-  }
+  char *template = strdup((char*)index_html_template); //read_file("index.html.template");
 
   template = replace_string_first(
       template, "{{black.svg}}",

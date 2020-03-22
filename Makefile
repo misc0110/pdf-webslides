@@ -20,6 +20,7 @@ res.o: resconv res.c freeze.svg
 	./resconv freeze.svg > res_gen.c
 	./resconv black.svg >> res_gen.c
 	./resconv open.svg >> res_gen.c
+	./resconv index.html.template >> res_gen.c
 	$(CC) res.c -c $(CFLAGS)
 
 resconv: resconv.c

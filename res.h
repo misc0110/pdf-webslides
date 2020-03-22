@@ -9,5 +9,7 @@ extern unsigned int freeze_svg_len;
 extern unsigned char freeze_svg[];
 extern unsigned int open_svg_len;
 extern unsigned char open_svg[];
+extern unsigned int index_html_template_len;
+extern unsigned char index_html_template[];
 
 #endif
