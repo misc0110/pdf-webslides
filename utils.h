@@ -12,6 +12,7 @@ char* encode_file_base64(char* fname);
 char* read_file(char* fname);
 char* replace_string_first(char* input, char* search, char* replace);
 char* encode_array(SlideInfo* info, int offset, int len, int b64, progress_t cb);
+char* encode_array_base64(char* array, size_t len);
 
 #endif
 

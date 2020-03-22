@@ -150,9 +150,9 @@ int main(int argc, char *argv[]) {
     return 1;
   }
   
-  template = replace_string_first(template, "{{black.svg}}", encode_file_base64("black.svg"));
-  template = replace_string_first(template, "{{freeze.svg}}", encode_file_base64("freeze.svg"));
-  template = replace_string_first(template, "{{open.svg}}", encode_file_base64("open.svg"));
+  template = replace_string_first(template, "{{black.svg}}", encode_array_base64(black_svg, black_svg_len));
+  template = replace_string_first(template, "{{freeze.svg}}", encode_array_base64(freeze_svg, freeze_svg_len));
+  template = replace_string_first(template, "{{open.svg}}", encode_array_base64(open_svg, open_svg_len));
 
   SlideInfo info[pages];
   

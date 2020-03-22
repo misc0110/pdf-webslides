@@ -87,6 +87,13 @@ char* encode_file_base64(char* fname) {
 }
 
 
+char* encode_array_base64(char* array, size_t len) {
+    char* out = malloc(len * 2 +  8);
+    base64encode(array, len, out, len * 2 + 8);
+    return out;
+}
+
+
 char* replace_string_first(char* input, char* search, char* replace) {
     size_t search_len = strlen(search);
     size_t input_len = strlen(input);
