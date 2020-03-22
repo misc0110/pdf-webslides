@@ -60,7 +60,7 @@ On Windows, the tool can be built using MSYS2.
 First, install the required libraries and tools
 
 
-   pacman -S gcc make mingw64/mingw-w64-x86_64-cairo mingw64/mingw-w64-x86_64-pkg-config mingw64/mingw-w64-x86_64-poppler 
+    pacman -S gcc make mingw64/mingw-w64-x86_64-cairo mingw64/mingw-w64-x86_64-pkg-config mingw64/mingw-w64-x86_64-poppler 
    
 Then, the tool can be built by running
 
