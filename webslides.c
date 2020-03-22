@@ -80,11 +80,30 @@ void progress_cb(int slide) {
     progress_update(1);
 }
 
+void extract_slide(PopplerDocument* pdffile, int p, SlideInfo* info, Options* options) {
+    PopplerPage *page;
+    char fname[64];
+    sprintf(fname, "slide-%d.svg", p);
+    page = poppler_document_get_page(pdffile, p);
+    convert(page, fname, &(info[p])); 
+    if(options->nonotes) {
+        free(info[p].annotations);
+        info[p].annotations = "";
+    }
+    progress_update(1);
+#if NO_SLIDES
+    char* b64 = strdup(empty_img);
+#else
+    char* b64 = encode_file_base64(fname);
+#endif
+    info[p].slide = b64;
+    unlink(fname);
+}
+
 
 int main(int argc, char *argv[]) {
   Options options = {.single = 0, .presenter = 0, .nonotes = 0, .name = NULL};
   PopplerDocument *pdffile;
-  PopplerPage *page;
   char abspath[PATH_MAX];
   char fname_uri[PATH_MAX + 32];
 
@@ -139,19 +158,7 @@ int main(int argc, char *argv[]) {
   
   // create slide data
   for (int p = 0; p < pages; p++) {
-    page = poppler_document_get_page(pdffile, p);
-    convert(page, "slide.svg", &(info[p])); 
-    if(options.nonotes) {
-        free(info[p].annotations);
-        info[p].annotations = "";
-    }
-    progress_update(1);
-#if NO_SLIDES
-    char* b64 = strdup(empty_img);
-#else
-    char* b64 = encode_file_base64("slide.svg");
-#endif
-    info[p].slide = b64;
+    extract_slide(pdffile, p, info, &options);
   }
   
   char* slide_data = encode_array(info, 2, pages, 0, progress_cb);
@@ -181,8 +188,6 @@ int main(int argc, char *argv[]) {
   }
   
   template = replace_string_first(template, "{{presenter}}", options.presenter ? "true" : "false");
-  
-  unlink("slide.svg");
   
   fwrite(template, strlen(template), 1, output);
   fclose(output);
