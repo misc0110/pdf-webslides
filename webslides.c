@@ -9,11 +9,25 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "cli.h"
 #include "colorprint_header.h"
 #include "res.h"
 #include "utils.h"
+
+#if defined(__linux__) || defined(__linux) || defined(__unix__) || defined(LINUX) || defined(UNIX)
+#define LINUX
+#endif
+#if defined(_WIN32) || defined(_WIN64) || defined(__MINGW32__) || defined(__CYGWIN__)
+#define WINDOWS
+#undef LINUX
+#endif
+
+#if defined(WINDOWS)
+#include <shlwapi.h>
+#include <windows.h>
+#endif
 
 #define NO_SLIDES 0
 
@@ -107,7 +121,7 @@ int main(int argc, char *argv[]) {
   PopplerDocument *pdffile;
   char abspath[PATH_MAX];
   char fname_uri[PATH_MAX + 32];
-
+  
   if (argc <= 1) {
     show_usage(argv[0], cli_options);
     return 1;
@@ -122,9 +136,16 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
+#if defined(LINUX)
   realpath(input, abspath);
   snprintf(fname_uri, sizeof(fname_uri), "file://%s", abspath);
-
+#elif defined(WINDOWS)
+  GetFullPathName(input, PATH_MAX, abspath, NULL);
+  unsigned int urllen = PATH_MAX;
+  fname_uri[0] = 0;
+  UrlCreateFromPath(abspath, fname_uri, &urllen, 0);
+#endif
+  
   pdffile = poppler_document_new_from_file(fname_uri, NULL, NULL);
   if (pdffile == NULL) {
     printf_color(1, TAG_FAIL "Could not open file '%s'\n", fname_uri);

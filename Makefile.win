@@ -5,7 +5,7 @@ CC ?= gcc
 all: webslides
 
 webslides: webslides.o cli.o utils.o res.o
-	$(CC) webslides.o cli.o utils.o res.o $(LDFLAGS) -o webslides `pkg-config --libs poppler-glib`
+	$(CC) webslides.o cli.o utils.o res.o $(LDFLAGS) -o webslides `pkg-config --libs poppler-glib` -lshlwapi
 
 webslides.o: webslides.c
 	$(CC) webslides.c -c $(CFLAGS) `pkg-config --cflags --static poppler-glib`
