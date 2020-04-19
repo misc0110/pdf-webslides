@@ -1,0 +1,118 @@
+.TH PDF\ WEBSLIDES 1
+.SH NAME
+pdf-webslides \- Convert PDF presentations to HTML
+.SH SYNOPSIS
+.B pdf-webslides\fR [\fIoptions\fR] <PDF>
+.SH DESCRIPTION
+.B pdf-webslides\fR allows converting PDF presentation slides to a self-contained HTML5 file. The resulting HTML5 file also contains a presentation mode which mimics the functionality of \fBpdfpc\fR. 
+
+The HTML file can be opened in any modern browser (tested on Firefox and Chrome). If the presenter mode is used, \fBpdf-webslides\fR opens one browser window for the presenter, and one for slides showed to the audience.
+
+.SH OPTIONS
+.TP
+\fB\-s\fR, \fB\-\-single\fR
+Create a single, standalone HTML file instead of a HTML and a JavaScript file. Note that this doubles the required traffic in presenter mode, as both browser windows have to download all slides. 
+.TP
+\fB\-p\fR, \fB\-\-presenter\fR
+Start in presenter mode.
+.TP
+\fB\-o\fR \fIname\fR, \fB\-\-output\fR=\fIname\fR
+Save generated HTML file as \fIfname\fR.
+.TP
+\fB\-n\fR, \fB\-\-disablenotes\fR
+Do not include speaker notes.
+.TP
+\fB\-v\fR, \fB\-\-version\fR
+Show version and exit.
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Show the help and exit.
+
+.SH KEYBINDINGS
+.TP
+\fBRight / Page Down / Swipe Right to Left\fR
+Go to next slide
+.TP
+\fBLeft / Page Up / Swipe Left to Right\fR 
+Go to previous slide
+.TP
+\fBHome\fR
+Go to first slide
+.TP
+\fBEnd\fR
+Go to last slide
+.TP
+\fBg\fR
+Input slide number to go to
+.TP
+\fB+\fR
+Increase note size
+.TP
+\fB-\fR
+Decrease note size
+.TP
+\fBb\fR
+Turn on/off presentation view, i.e., display an entirely black screen
+.TP
+\fBf\fR
+Freeze/unfreeze presentation view. Any change in the presenter mode is not shown on the presentation view
+.TP
+\fBr\fR
+Reset timer
+.TP
+\fBp\fR
+Display/hide a pointer (i.e., a virtual laser pointer) in presenter mode / switch to presenter mode
+.TP
+\fBTab\fR
+Go to overview mode showing a thumbnail of all slides.
+
+.SH FEATURES
+
+.TP 
+\fBNotes\fR
+\fBpdf-webslides\fR supports speaker notes. 
+These notes are displayed on the bottom-right corner, below the preview of the next slide, when in presenter mode. 
+\fBpdf-webslides\fR supports the same type of notes as \fBpdfpc\fR. Hence, they can also be directly embedded in LaTeX beamer.
+With the following macro
+
+    \fI\\newcommand<>{\\pnote}[1]{\\only#2{\}tikz[remember picture,overlay]{\\node{\\pdfmargincomment[opacity=0]{#1}}}}}\fR
+
+notes can be added to a certain animation-step of a slide by adding something like 
+
+    \fI\\pnote<1>{Speaker note for step 1 of the current slide.}\fR
+
+.TP
+\fBTimer\fR
+In presenter mode, there is a timer on the bottom showing the time since the first slide change. The timer can be reset by pressing \fIr\fR. It starts again when advancing to the next slide. 
+
+The timer can also be configured to count down instead of up. By clicking on the timer, the total presentation time can be specified. 
+Again, the timer starts counting as soon as the current slide is advanced to the next slide. 
+In addition to the countdown, the timer is also color-coded. For that, the \fBpdf-webslides\fR assumes that the presentation time is uniformly distributed among the slides. 
+If the presentation is ahead of the target time more than 60 seconds, the timer turns blue. If the presentation is behind more than 60 seconds, the timer turns yellow. If the presentation is taking longer than the target time, the timer turns red, but still continues displaying the (negative) remaining time. 
+
+.TP
+\fBVirtual pointer\fR
+\fBpdf-webslides\fR supports a virtual laser pointer which is useful if the presentation is recorded or streamed. By pressing \fIp\fR in presenter mode, the mouse cursor turns into a virtual laser pointer. When moving the cursor on the preview of the current slide, a red dot is shown at the same location on the slides. 
+
+.TP
+\fBVideos\fR
+There is a rudimentary support for videos embedded into the PDF. Videos can be used in the same way as with \fBpdfpc\fR, e.g., using \fIpdfpc-commands.sty\fR. 
+Note that videos are not embedded into the HTML file, they have to be in the same folder. 
+
+.TP
+\fBOverview\fR
+Pressing tab in presenter mode shows a grid containing a thumbnail for every slide. This allows quickly switching to a slide (by clicking on it) without having to cycle through slides. 
+
+.SH EXAMPLES
+.TP 
+pdf-webslides -p -s -o presentation.html presentation.pdf
+Converts the presentation \fIpresentation.pdf\fR to a standalone HTML file \fIpresentation.html\fR that opens directly in presenter mode. 
+
+.SH SEE ALSO
+\fBpdfpc\fR(1)
+.SH COPYRIGHT
+Copyright 2020 Michael Schwarz <michael.schwarz91@gmail.com>
+
+This is free software; see the  source  for  copying  conditions.
+There  is  NO  warranty;  not  even  for
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
