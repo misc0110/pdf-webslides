@@ -215,12 +215,10 @@ div#footer {
         if(duration == 0) return "#ffffff";
         ms /= 1000;
         var time_per_slide = (duration / 1000) / (slide_img.length - 1);
-        var time_tolerance = time_per_slide * 0.2; // 20 percent
         var target_time = slide * time_per_slide;
-        console.log(ms + " -> " + target_time);
-        if(ms < (time_per_slide * (slide - 1)) - time_tolerance) return "#8080ff";
-        if(ms > (time_per_slide * (slide + 2)) + time_tolerance) return "#ff0000";
-        if(ms > (time_per_slide * (slide + 1)) + time_tolerance) return "#ff8000";
+//         console.log(ms + " -> " + target_time);
+        if(ms + 60 < target_time) return "#8080ff";
+        if(ms > target_time + 60) return "#ff8000";
         return "#ffffff";
     }
     

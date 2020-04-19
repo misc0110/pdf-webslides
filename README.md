@@ -1,6 +1,6 @@
 # PDF Web Slides 
 
-This tool allows converting PDF presentation slides to a self-contained HTML5 file. The resulting HTML5 file also contains a presentation mode which mimicks the functionality of [pdfpc](https://github.com/pdfpc/pdfpc). 
+This tool allows converting PDF presentation slides to a self-contained HTML5 file. The resulting HTML5 file also contains a presentation mode which mimics the functionality of [pdfpc](https://github.com/pdfpc/pdfpc). 
 
 ![PDF Web Slides in presentation mode](screenshot.png)
 *Presentation mode (left) with a preview of the next slides and a timer which either counts up or down, and the presentation view (right)*
@@ -16,7 +16,7 @@ The output is an `index.html` file and a corresponding `slides.js` in the curren
 ## Presenter Mode
 
 Presenter mode is a mode where the audience sees the slides, while the presenter sees the current and next slide, a timer, and speaker notes. 
-The presenter mode of PDF Web Slides mimicks the presenter mode of [pdfpc](https://github.com/pdfpc/pdfpc). 
+The presenter mode of PDF Web Slides mimics the presenter mode of [pdfpc](https://github.com/pdfpc/pdfpc). 
 
 ### Starting Presenter Mode
 
