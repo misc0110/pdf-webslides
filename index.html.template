@@ -353,10 +353,7 @@ div#footer {
         ov.innerHTML = table;
     }
     
-    function init() {
-        var font_size = 200;
-        presenter = {{presenter}} && (document.location.href.indexOf("?presentslides") == -1);
-    
+    function setLayout() {
         if(document.location.href.indexOf("?presenter") != -1 || presenter) {
             presenter = true;
             document.getElementById("slide").style.width="70%";
@@ -377,7 +374,13 @@ div#footer {
             } catch(e) {
             }
         }
-        
+    }
+    
+    function init() {
+        var font_size = 200;
+        presenter = {{presenter}} && (document.location.href.indexOf("?presentslides") == -1);
+    
+        setLayout();
         
         var img = document.getElementById("slide");
         img.addEventListener('wheel', function(e) {
@@ -437,13 +440,19 @@ div#footer {
                     goto(new_slide - 1);
                 }
             } else if(e.key == "p") {
-                pointer = !pointer;
-                if(presenter) document.getElementById("pointer").style.display = pointer ? "" : "none";
-                if(presenter && slides) {
-                    try {
-                        slides.pointer = pointer
-                    } catch(e) {
-                        slides.postMessage({"action": "showPointer", "data": pointer}, "*");
+                if(!presenter) {
+                    presenter = true;
+                    setLayout();
+                    redraw();
+                } else {
+                    pointer = !pointer;
+                    if(presenter) document.getElementById("pointer").style.display = pointer ? "" : "none";
+                    if(presenter && slides) {
+                        try {
+                            slides.pointer = pointer
+                        } catch(e) {
+                            slides.postMessage({"action": "showPointer", "data": pointer}, "*");
+                        }
                     }
                 }
             } else if(e.keyCode == 9) {

@@ -1,11 +1,12 @@
-CFLAGS += -g -Wall
+VERSION = $(shell cat VERSION)
+CFLAGS += -g -Wall -DAPP_VERSION="\"$(VERSION)\""
 LDFLAGS +=  
 CC ?= gcc
 
-all: webslides
+all: pdf-webslides
 
-webslides: webslides.o cli.o utils.o res.o
-	$(CC) webslides.o cli.o utils.o res.o $(LDFLAGS) -o webslides `pkg-config --libs poppler-glib`
+pdf-webslides: webslides.o cli.o utils.o res.o
+	$(CC) webslides.o cli.o utils.o res.o $(LDFLAGS) -o pdf-webslides `pkg-config --libs poppler-glib`
 
 webslides.o: webslides.c
 	$(CC) webslides.c -c $(CFLAGS) `pkg-config --cflags --static poppler-glib`
@@ -16,7 +17,7 @@ cli.o: cli.c
 utils.o: utils.c
 	$(CC) utils.c -c $(CFLAGS)
 	
-res.o: resconv res.c freeze.svg 
+res.o: resconv res.c freeze.svg black.svg open.svg index.html.template
 	./resconv freeze.svg > res_gen.c
 	./resconv black.svg >> res_gen.c
 	./resconv open.svg >> res_gen.c
@@ -30,4 +31,4 @@ deb: webslides
 	fakeroot -u ./makedeb.sh
 	
 clean:
-	rm -f *.o *.deb webslides resconv	
+	rm -f *.o *.deb pdf-webslides resconv	

@@ -34,7 +34,7 @@ struct option *getopt_get_long_options(getopt_arg_t *opt) {
 
 // ---------------------------------------------------------------------------
 void show_usage(char *binary, getopt_arg_t *cli_options) {
-  printf("USAGE\n  %s [options] \n\n", binary);
+  printf("USAGE\n  %s [options] <pdf file> \n\n", binary);
   getopt_arg_t null_option = {0};
   size_t count = 0;
   printf("\nOPTIONS\n");
@@ -70,7 +70,7 @@ int parse_cli_options(Options *options, getopt_arg_t *cli_options, int argc,
   struct option *long_options =
       getopt_get_long_options((getopt_arg_t *)cli_options);
   int c;
-  while ((c = getopt_long(argc, argv, ":spo:n", long_options, NULL)) != EOF) {
+  while ((c = getopt_long(argc, argv, ":spo:nhv", long_options, NULL)) != EOF) {
     switch (c) {
       case 's':
         options->single = 1;
@@ -87,6 +87,9 @@ int parse_cli_options(Options *options, getopt_arg_t *cli_options, int argc,
       case 'n':
         options->nonotes = 1;
         break;
+      case 'v':
+        printf("pdf-webslides %s\n", APP_VERSION);
+        return 1;
       case ':':
         printf("Option -%c requires an argument.\n", optopt);
         printf("\n");

@@ -37,6 +37,7 @@ static getopt_arg_t cli_options[] = {
     {"presenter", no_argument, NULL, 'p', "Start in presenter mode", NULL},
     {"output", required_argument, NULL, 'o', "Output file name", "FILENAME"},
     {"disablenotes", no_argument, NULL, 'n', "Do not include notes", NULL},
+    {"version", no_argument, NULL, 'v', "Show version", NULL},
     {"help", no_argument, NULL, 'h', "Show this help.", NULL},
     {NULL, 0, NULL, 0, NULL, NULL}};
 
