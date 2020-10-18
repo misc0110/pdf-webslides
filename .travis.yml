@@ -89,13 +89,8 @@ jobs:
 
         - os: windows
           script:
-              - $msys2 make --version
-              - gcc --version
-              - bash --version
-              - bash -c 'echo "works"'
-              - $msys bash --version
-              - $msys bash -c 'echo "works"'
               - ./build-travis-win.sh
+              - ls | grep pdf-webslides
 
 before_install:
 - |-
