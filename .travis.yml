@@ -1,32 +1,34 @@
 language: c
 compiler: gcc
  
-os: linux
-dist: xenial
-arch: 
-    - amd64
-    - arm64
-addons:
-    apt:
-        update: true
-        packages:
-            - gcc
-            - libcairo2-dev
-            - libpoppler-glib-dev
+jobs:
+    include:
+        - os: linux
+          dist: xenial
+          arch: 
+              - amd64
+              - arm64
+          addons:
+              apt:
+                  update: true
+                  packages:
+                      - gcc
+                      - libcairo2-dev
+                      - libpoppler-glib-dev
 
-            
-os: linux
-dist: bionic
-arch: 
-    - amd64
-    - arm64
-addons:
-    apt:
-        update: true
-        packages:
-            - gcc
-            - libcairo2-dev
-            - libpoppler-glib-dev
+                    
+        - os: linux
+          dist: bionic
+          arch: 
+              - amd64
+              - arm64
+          addons:
+              apt:
+                  update: true
+                  packages:
+                      - gcc
+                      - libcairo2-dev
+                      - libpoppler-glib-dev
 
 script:
     - make
