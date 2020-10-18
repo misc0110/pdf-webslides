@@ -1,0 +1,19 @@
+language: c
+compiler: gcc
+ 
+include:
+
+  - os: linux
+    dist: xenial
+    arch: amd64
+    sudo: false
+    apt:
+        update: true
+        packages:
+            - gcc
+            - libcairo2-dev
+            - libpoppler-glib-dev
+        
+script:
+  - make
+  - ./pdf-webslides --version | grep -c pdf-webslides
