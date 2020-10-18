@@ -1,4 +1,6 @@
 # PDF Web Slides 
+[![Build Status](https://travis-ci.org/misc0110/pdf-webslides.svg?branch=master)](https://travis-ci.org/misc0110/pdf-webslides)
+
 
 This tool allows converting PDF presentation slides to a self-contained HTML5 file. The resulting HTML5 file also contains a presentation mode which mimics the functionality of [pdfpc](https://github.com/pdfpc/pdfpc). 
 
