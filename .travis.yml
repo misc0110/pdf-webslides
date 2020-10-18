@@ -89,8 +89,11 @@ jobs:
 
         - os: windows
           script:
+              - make --version
+              - gcc --version
+              - pkg-config --libs poppler-glib
               - make -f Makefile.win
-              - ./pdf-webslides.exe --version
+              - ./pdf-webslides --version
 
 before_install:
 - |-
