@@ -90,7 +90,8 @@ jobs:
         - os: windows
           script:
               - ./build-travis-win.sh
-              - ls | grep pdf-webslides
+              - ls | grep -c pdf-webslides.exe
+              - ./pdf-webslides.exe --version | grep -c pdf-webslides
 
 before_install:
 - |-
