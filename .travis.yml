@@ -91,6 +91,8 @@ jobs:
           script:
               - make --version
               - mingw64-make --version
+              - mingw32-make --version
+              - $msys2 make --version
               - gcc --version
               - pkg-config --libs poppler-glib
               - make -f Makefile.win
