@@ -2,14 +2,16 @@ VERSION = $(shell cat VERSION)
 CFLAGS += -g -Wall -DAPP_VERSION="\"$(VERSION)\""
 LDFLAGS +=  
 CC ?= gcc
+POPPLER_CFLAGS=$(shell pkg-config --cflags --static poppler-glib)
+POPPLER_LIBS=$(pkg-config --libs poppler-glib)
 
 all: pdf-webslides
 
 pdf-webslides: webslides.o cli.o utils.o res.o
-	$(CC) webslides.o cli.o utils.o res.o $(LDFLAGS) -o pdf-webslides `pkg-config --libs poppler-glib` -lshlwapi
+	$(CC) webslides.o cli.o utils.o res.o $(LDFLAGS) -o pdf-webslides $(POPPLER_LIBS) -lshlwapi
 
 webslides.o: webslides.c
-	$(CC) webslides.c -c $(CFLAGS) `pkg-config --cflags --static poppler-glib`
+	$(CC) webslides.c -c $(CFLAGS) $(POPPLER_CFLAGS)
 	
 cli.o: cli.c
 	$(CC) cli.c -c $(CFLAGS)
