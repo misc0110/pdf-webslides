@@ -2,8 +2,13 @@ language: c
 compiler: gcc
  
 os: linux
-dist: xenial
-arch: amd64
+dist: 
+    - xenial
+    - bionic
+    - focal
+arch: 
+    - amd64
+    - arm64
 addons:
     apt:
         update: true
