@@ -91,11 +91,11 @@ jobs:
           script:
               - $msys2 make --version
               - gcc --version
-              - pkg-config --libs poppler-glib
-              - $msys2 pkg-config --libs poppler-glib
-              - mv Makefile.win Makefile
-              - $msys2 make V=1
-              - ./pdf-webslides --version
+              - bash --version
+              - bash -c 'echo "works"'
+              - $msys bash --version
+              - $msys bash -c 'echo "works"'
+              - ./build-travis-win.sh
 
 before_install:
 - |-
