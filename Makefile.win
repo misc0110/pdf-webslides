@@ -8,7 +8,7 @@ POPPLER_LIBS = $(shell pkg-config --libs poppler-glib)
 all: pdf-webslides
 
 pdf-webslides: webslides.o cli.o utils.o res.o
-	$(CC) webslides.o cli.o utils.o res.o $(LDFLAGS) -o pdf-webslides $(POPPLER_LIBS) -lshlwapi
+	$(CC) webslides.o cli.o utils.o res.o $(LDFLAGS) $(CFLAGS) -o pdf-webslides $(POPPLER_LIBS) -lshlwapi
 
 webslides.o: webslides.c
 	$(CC) webslides.c -c $(CFLAGS) $(POPPLER_CFLAGS)

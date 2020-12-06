@@ -27,6 +27,24 @@
 #if defined(WINDOWS)
 #include <shlwapi.h>
 #include <windows.h>
+
+void winsystem(const char* app, char* arg) {
+  STARTUPINFO si;
+  PROCESS_INFORMATION pi;
+
+  ZeroMemory(&si, sizeof(si));
+  si.cb = sizeof(si);
+  si.dwFlags |= STARTF_USESTDHANDLES;
+  si.hStdInput = NULL;
+  si.hStdError = NULL;
+  si.hStdOutput = NULL;
+  ZeroMemory(&pi, sizeof(pi));
+
+  CreateProcess(app, arg, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi);
+  WaitForSingleObject(pi.hProcess, INFINITE);
+  CloseHandle(pi.hProcess);
+  CloseHandle(pi.hThread);
+}
 #endif
 
 #define NO_SLIDES 0
@@ -111,12 +129,13 @@ void extract_slide(PopplerDocument *pdffile, int p, SlideInfo *info,
     sprintf(fname_c, "slidec-%d.svg", p);
     char convert_cmd[256];
 #if defined(WINDOWS)
-    sprintf(convert_cmd, "%s %s %s >nul 2>nul", options->compress, fname, fname_c);
+    sprintf(convert_cmd, "\"%s\" %s %s", options->compress, fname, fname_c);
+    winsystem(options->compress, convert_cmd);
 #endif
 #if defined(LINUX)
-    sprintf(convert_cmd, "%s %s %s 2> /dev/null > /dev/null", options->compress, fname, fname_c);    
-#endif
+    sprintf(convert_cmd, "\"%s\" %s %s 2> /dev/null > /dev/null", options->compress, fname, fname_c);
     system(convert_cmd);
+#endif
   } else {
     strcpy(fname_c, fname);
   }
