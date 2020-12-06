@@ -17,6 +17,7 @@ typedef struct {
   int presenter;
   int nonotes;
   char* name;
+  char* compress;
 } Options;
 
 #endif

@@ -37,6 +37,7 @@ static getopt_arg_t cli_options[] = {
     {"presenter", no_argument, NULL, 'p', "Start in presenter mode", NULL},
     {"output", required_argument, NULL, 'o', "Output file name", "FILENAME"},
     {"disablenotes", no_argument, NULL, 'n', "Do not include notes", NULL},
+    {"compress", required_argument, NULL, 'c', "Use an SVG compressor (e.g., svgcleaner)", "BINARY"},
     {"version", no_argument, NULL, 'v', "Show version", NULL},
     {"help", no_argument, NULL, 'h', "Show this help.", NULL},
     {NULL, 0, NULL, 0, NULL, NULL}};
@@ -98,7 +99,7 @@ void progress_cb(int slide) { progress_update(1); }
 void extract_slide(PopplerDocument *pdffile, int p, SlideInfo *info,
                    Options *options) {
   PopplerPage *page;
-  char fname[64];
+  char fname[64], fname_c[64];
   sprintf(fname, "slide-%d.svg", p);
   page = poppler_document_get_page(pdffile, p);
   convert(page, fname, &(info[p]));
@@ -106,19 +107,35 @@ void extract_slide(PopplerDocument *pdffile, int p, SlideInfo *info,
     free(info[p].annotations);
     info[p].annotations = "";
   }
+  if (options->compress) {
+    sprintf(fname_c, "slidec-%d.svg", p);
+    char convert_cmd[256];
+#if defined(WINDOWS)
+    sprintf(convert_cmd, "%s %s %s >nul 2>nul", options->compress, fname, fname_c);
+#endif
+#if defined(LINUX)
+    sprintf(convert_cmd, "%s %s %s 2> /dev/null > /dev/null", options->compress, fname, fname_c);    
+#endif
+    system(convert_cmd);
+  } else {
+    strcpy(fname_c, fname);
+  }
   progress_update(1);
 #if NO_SLIDES
   char *b64 = strdup(empty_img);
 #else
-  char *b64 = encode_file_base64(fname);
+  char *b64 = encode_file_base64(fname_c);
 #endif
   info[p].slide = b64;
   unlink(fname);
+  if (options->compress) {
+      unlink(fname_c);
+  }
 }
 
 // ---------------------------------------------------------------------------
 int main(int argc, char *argv[]) {
-  Options options = {.single = 0, .presenter = 0, .nonotes = 0, .name = NULL};
+  Options options = {.single = 0, .presenter = 0, .nonotes = 0, .name = NULL, .compress = NULL};
   PopplerDocument *pdffile;
   char abspath[PATH_MAX];
   char fname_uri[PATH_MAX + 32];

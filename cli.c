@@ -70,7 +70,7 @@ int parse_cli_options(Options *options, getopt_arg_t *cli_options, int argc,
   struct option *long_options =
       getopt_get_long_options((getopt_arg_t *)cli_options);
   int c;
-  while ((c = getopt_long(argc, argv, ":spo:nhv", long_options, NULL)) != EOF) {
+  while ((c = getopt_long(argc, argv, ":spo:nhvc:", long_options, NULL)) != EOF) {
     switch (c) {
       case 's':
         options->single = 1;
@@ -90,6 +90,9 @@ int parse_cli_options(Options *options, getopt_arg_t *cli_options, int argc,
       case 'v':
         printf("pdf-webslides %s\n", APP_VERSION);
         return 1;
+      case 'c':
+        options->compress = strdup(optarg);
+        break;
       case ':':
         printf("Option -%c requires an argument.\n", optopt);
         printf("\n");
