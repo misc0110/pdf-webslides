@@ -27,7 +27,7 @@ res.o: resconv res.c freeze.svg black.svg open.svg index.html.template
 resconv: resconv.c
 	$(CC) resconv.c -o resconv
 
-deb: webslides
+deb: pdf-webslides
 	fakeroot -u ./makedeb.sh
 	
 clean:
