@@ -1,6 +1,6 @@
 VERSION = $(shell cat VERSION)
 CFLAGS += -g -Wall -DAPP_VERSION="\"$(VERSION)\""
-LDFLAGS +=  
+LDFLAGS +=
 CC ?= gcc
 
 all: pdf-webslides

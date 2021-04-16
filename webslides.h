@@ -9,6 +9,7 @@ typedef struct __attribute__((packed)) {
   char* annotations;
   char* videos;
   char* slide;
+  char* thumb;
 } SlideInfo;
 
 // ---------------------------------------------------------------------------

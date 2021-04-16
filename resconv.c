@@ -37,7 +37,7 @@ int main(int argc, char* argv[]) {
             printf(", ");
         }
     }
-    printf("};\nunsigned int %s_len = %d;\n", name, (int)len);
+    printf(", 0};\nunsigned int %s_len = %d;\n", name, (int)len);
     fflush(stdout);
     free(name);
     free(data);
