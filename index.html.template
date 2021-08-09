@@ -356,9 +356,11 @@ div#footer {
         if(document.location.href.indexOf("?presenter") != -1 || presenter) {
             presenter = true;
             document.getElementById("slide").style.width="70%";
+            document.getElementById("slide").style.backgroundColor="white";
             document.getElementById("video").style.width="70%";
             document.getElementById("slide").style.height="auto";
             document.getElementById("slide-next").style.width="30%";
+            document.getElementById("slide-next").style.backgroundColor="white";
             document.getElementById("open-btn").style.display = "inline-flex";
             document.getElementById("slide-next").style.display = "block";
             document.getElementById("slide-annot").style.display = "";
