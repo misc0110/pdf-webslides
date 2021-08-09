@@ -92,6 +92,7 @@ int convert(PopplerPage *page, const char *fname, SlideInfo *info) {
   poppler_page_get_size(page, &width, &height);
   surface = cairo_svg_surface_create(fname, width, height);
   img = cairo_create(surface);
+  info->videos = NULL;
 
   poppler_page_render_for_printing(page, img);
 
@@ -107,12 +108,16 @@ int convert(PopplerPage *page, const char *fname, SlideInfo *info) {
         strncat(comm, "\n", 1024);
         g_free(cont);
       }
+    } else if(type == 19) {
+        PopplerMovie *movie = poppler_annot_movie_get_movie(m->annot);
+        if(movie) {
+            info->videos = strdup(poppler_movie_get_filename(movie));
+        }
     }
   }
   info->annotations = comm;
   poppler_page_free_annot_mapping(annot_list);
 
-  info->videos = NULL;
   GList *link_list = poppler_page_get_link_mapping(page);
   for (s = link_list; s != NULL; s = s->next) {
     PopplerLinkMapping *m = (PopplerLinkMapping *)s->data;
