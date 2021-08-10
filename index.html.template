@@ -8,11 +8,16 @@ body, html {
     overflow-x: hidden;
     overflow-y: auto;
 }
-img#slide, video#video {
+img#slide {
+    float: left;
+    background-color: white;
+}
+video#video {
     float: left;
 }
 img#slide-next {
     float: right;
+    background-color: white;
 }
 #slide-annot {
     color: white;
@@ -94,6 +99,7 @@ div#footer {
     
     var slide_img = slide_info["slides"];
     var slide_video = slide_info["videos"];
+    var slide_video_pos = slide_info["videos_pos"];
     var slide_annot = slide_info["annotations"];
     var slide_thumb = slide_info["thumb"];
 
@@ -117,15 +123,17 @@ div#footer {
         slide = sid;
         redraw();
     }
-    
+
     function slideType(type) {
         if(type == "image") {
             document.getElementById("slide").style.display = "";
             document.getElementById("video").style.display = "none";
             document.getElementById("video").innerHTML = "";
-            
         } else if(type == "video") {
             document.getElementById("slide").style.display = "none";
+            document.getElementById("video").style.display = "";
+        } else if (type == "video_embedded") {
+            document.getElementById("slide").style.display = "";
             document.getElementById("video").style.display = "";
         }
     }
@@ -139,7 +147,30 @@ div#footer {
 //             console.log("found video " + url);
             var video_elem = document.getElementById("video");
             video_elem.innerHTML = "<source src=\"" + url + "\">";
-            video_elem.poster = "data:image/svg+xml;base64," + slide_img[slide];
+
+            if (slide_video_pos[slide] != "") {
+                var coords = slide_video_pos[slide].split(';').map(parseFloat);
+                slideType("video_embedded");
+                document.getElementById("slide").src = (black && !presenter) ? "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=" : "data:image/svg+xml;base64," + slide_img[slide];
+
+                var slide_style = window.getComputedStyle(document.getElementById("slide"));
+
+                var slide_width = parseInt(slide_style.width);
+                var slide_height = parseInt(slide_style.height);
+
+                video_elem.style.width = ((coords[2] - coords[0]) * slide_width).toString() + "px";
+                video_elem.style.height = ((coords[3] - coords[1]) * slide_height).toString() + "px";
+
+                video_elem.style.left = (coords[0] * slide_width).toString() + "px";
+                video_elem.style.top = ((1.0 - coords[3]) * slide_height).toString() + "px";
+
+                video_elem.style.position = "absolute";
+                video_elem.poster = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAQAAADYv8WvAAAADklEQVR42mNkAAJGEAEAABkAA50Y5HIAAAAASUVORK5CYII=";
+            } else {
+                slideType("video");
+                video_elem.poster = "data:image/svg+xml;base64," + slide_img[slide];
+            }
+
             video_elem.load();
             video_elem.pause();
             video_elem.currentTime = 0;
