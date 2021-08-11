@@ -94,7 +94,7 @@ int convert(PopplerPage *page, const char *fname, SlideInfo *info) {
   img = cairo_create(surface);
 
   info->videos_pos = "";
-  info->videos = NULL;
+  info->videos = "";
 
   poppler_page_render_for_printing(page, img);
 
@@ -113,20 +113,35 @@ int convert(PopplerPage *page, const char *fname, SlideInfo *info) {
     } else if(type == 19) {
         PopplerMovie *movie = poppler_annot_movie_get_movie(m->annot);
         if(movie) {
-            info->videos = strdup(poppler_movie_get_filename(movie));
-            /* info->videos_pos = strdup(poppler_movie_get_filename(movie)); */
-            PopplerRectangle *rectangle = poppler_rectangle_new();
-            poppler_annot_get_rectangle(m->annot, rectangle);
-            double llx = rectangle->x1 / width;
-            double lly = rectangle->y1 / height;
-            double urx = rectangle->x2 / width;
-            double ury = rectangle->y2 / height;
-            size_t str_size =
-                snprintf(NULL, 0, "%f;%f;%f;%f", llx, lly, urx, ury) + 1;
-            char *buffer = malloc(str_size);
-            sprintf(buffer, "%f;%f;%f;%f", llx, lly, urx, ury);
-            info->videos_pos = strdup(buffer);
-            poppler_rectangle_free(rectangle);
+          char *movie_filename = strdup(poppler_movie_get_filename(movie));
+          char *movies_str =
+              malloc(strlen(info->videos) + 1 + strlen(movie_filename) + 1);
+          movies_str[0] = '\0';
+          strcat(movies_str, info->videos);
+          strcat(movies_str, "|");
+          strcat(movies_str, movie_filename);
+          info->videos = strdup(movies_str);
+
+          PopplerRectangle *rectangle = poppler_rectangle_new();
+          poppler_annot_get_rectangle(m->annot, rectangle);
+          double llx = rectangle->x1 / width;
+          double lly = rectangle->y1 / height;
+          double urx = rectangle->x2 / width;
+          double ury = rectangle->y2 / height;
+          size_t str_size =
+              snprintf(NULL, 0, "%f;%f;%f;%f", llx, lly, urx, ury) + 1;
+          char *buffer = malloc(str_size);
+          sprintf(buffer, "%f;%f;%f;%f", llx, lly, urx, ury);
+
+          char *movies_pos_str =
+              malloc(strlen(info->videos_pos) + 1 + strlen(buffer) + 1);
+          movies_pos_str[0] = '\0';
+          strcat(movies_pos_str, info->videos_pos);
+          strcat(movies_pos_str, "|");
+          strcat(movies_pos_str, buffer);
+
+          info->videos_pos = strdup(movies_pos_str);
+          poppler_rectangle_free(rectangle);
         }
     }
   }
@@ -141,7 +156,14 @@ int convert(PopplerPage *page, const char *fname, SlideInfo *info) {
     if (a->type == POPPLER_ACTION_LAUNCH) {
       PopplerActionLaunch *launch = (PopplerActionLaunch *)a;
       //         printf("\n\n%s\n", launch->file_name);
-      info->videos = strdup(launch->file_name);
+      char *movie_filename = strdup(launch->file_name);
+      char *movies_str =
+          malloc(strlen(info->videos) + 1 + strlen(movie_filename) + 1);
+      movies_str[0] = '\0';
+      strcat(movies_str, info->videos);
+      strcat(movies_str, "|");
+      strcat(movies_str, movie_filename);
+      info->videos = strdup(movies_str);
     }
   }
   poppler_page_free_link_mapping(link_list);

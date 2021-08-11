@@ -69,7 +69,7 @@ div#footer {
 </style>
 </head>
 <body onload="init()"><div id="overview" style="display: none;"></div>
-<div id="presenterconsole"><img id="slide" height="100%"/><video id="video" height="100%" style="display: none;" ></video>
+<div id="presenterconsole"><img id="slide" height="100%"/>
 <img id="slide-next" style="display: none;"/><span id="slide-annot" style="display: none;"></span>
 <button onclick="openSlides()" id="open-btn" >
 <img src="data:image/svg+xml;base64,{{open.svg}}"/> <span id="slides-open">&nbsp; Open Slides</span>
@@ -125,61 +125,69 @@ div#footer {
     }
 
     function slideType(type) {
+        document.querySelectorAll('[id^="video"]').forEach(el => el.parentNode.removeChild(el));
         if(type == "image") {
             document.getElementById("slide").style.display = "";
-            document.getElementById("video").style.display = "none";
-            document.getElementById("video").innerHTML = "";
         } else if(type == "video") {
             document.getElementById("slide").style.display = "none";
-            document.getElementById("video").style.display = "";
         } else if (type == "video_embedded") {
             document.getElementById("slide").style.display = "";
-            document.getElementById("video").style.display = "";
         }
     }
 
     function redraw() {
     
         if(slide_video[slide] != "") {
-            slideType("video");
+            var urls = atob(slide_video[slide]).substring(1).split('|');
 
-            var url = atob(slide_video[slide]);
-//             console.log("found video " + url);
-            var video_elem = document.getElementById("video");
-            video_elem.innerHTML = "<source src=\"" + url + "\">";
-
+            var video_pos = "";
             if (slide_video_pos[slide] != "") {
-                var coords = slide_video_pos[slide].split(';').map(parseFloat);
+                video_pos = slide_video_pos[slide].substring(1).split('|');
                 slideType("video_embedded");
                 document.getElementById("slide").src = (black && !presenter) ? "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=" : "data:image/svg+xml;base64," + slide_img[slide];
-
-                var slide_style = window.getComputedStyle(document.getElementById("slide"));
-
-                var slide_width = parseInt(slide_style.width);
-                var slide_height = parseInt(slide_style.height);
-
-                video_elem.style.width = ((coords[2] - coords[0]) * slide_width).toString() + "px";
-                video_elem.style.height = ((coords[3] - coords[1]) * slide_height).toString() + "px";
-
-                video_elem.style.left = (coords[0] * slide_width).toString() + "px";
-                video_elem.style.top = ((1.0 - coords[3]) * slide_height).toString() + "px";
-
-                video_elem.style.position = "absolute";
-                video_elem.poster = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAQAAADYv8WvAAAADklEQVR42mNkAAJGEAEAABkAA50Y5HIAAAAASUVORK5CYII=";
             } else {
                 slideType("video");
-                video_elem.poster = "data:image/svg+xml;base64," + slide_img[slide];
             }
 
-            video_elem.load();
-            video_elem.pause();
-            video_elem.currentTime = 0;
-            if(url.indexOf("?autostart") != -1 /*&& !presenter*/) {
-                video_elem.muted = true;
-                video_elem.autoplay = true;
-                video_elem.play();
+            for (var i = 0; i < urls.length; i++) {
+                var slide_elem = document.getElementById("slide");
+
+                var video_elem = document.createElement('video');
+                video_elem.id = 'video' + i.toString();
+                video_elem.height = "100%";
+                slide_elem.parentNode.insertBefore(video_elem, slide_elem.nextSibling);
+
+                video_elem.innerHTML = "<source src=\"" + urls[i] + "\">";
+
+                if (video_pos[i] && video_pos[i] != "") {
+                    var coords = video_pos[i].split(';').map(parseFloat);
+
+                    var slide_style = window.getComputedStyle(document.getElementById("slide"));
+                    var slide_width = parseInt(slide_style.width);
+                    var slide_height = parseInt(slide_style.height);
+
+                    video_elem.style.width = ((coords[2] - coords[0]) * slide_width).toString() + "px";
+                    video_elem.style.height = ((coords[3] - coords[1]) * slide_height).toString() + "px";
+
+                    video_elem.style.left = (coords[0] * slide_width).toString() + "px";
+                    video_elem.style.top = ((1.0 - coords[3]) * slide_height).toString() + "px";
+
+                    video_elem.style.position = "absolute";
+                    video_elem.poster = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAQAAADYv8WvAAAADklEQVR42mNkAAJGEAEAABkAA50Y5HIAAAAASUVORK5CYII=";
+                } else {
+                    video_elem.poster = "data:image/svg+xml;base64," + slide_img[slide];
+                }
+
+                video_elem.load();
+                video_elem.pause();
+                video_elem.currentTime = 0;
+                if(urls[i].indexOf("?autostart") != -1 /*&& !presenter*/) {
+                    video_elem.muted = true;
+                    video_elem.autoplay = true;
+                    video_elem.play();
+                }
+                video_elem.controls = true;
             }
-            video_elem.controls = true;
         } else {
             slideType("image");
 
