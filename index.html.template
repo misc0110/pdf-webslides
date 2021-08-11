@@ -396,7 +396,6 @@ div#footer {
             presenter = true;
             document.getElementById("slide").style.width="70%";
             document.getElementById("slide").style.backgroundColor="white";
-            document.getElementById("video").style.width="70%";
             document.getElementById("slide").style.height="auto";
             document.getElementById("slide-next").style.width="30%";
             document.getElementById("slide-next").style.backgroundColor="white";
