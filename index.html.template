@@ -159,7 +159,7 @@ div#footer {
 
                 video_elem.innerHTML = "<source src=\"" + urls[i] + "\">";
 
-                if (video_pos[i] && video_pos[i] != "") {
+                if (video_pos[i] && video_pos[i] != "" && video_pos[i].split(';').length == 4) {
                     var coords = video_pos[i].split(';').map(parseFloat);
 
                     var slide_style = window.getComputedStyle(document.getElementById("slide"));

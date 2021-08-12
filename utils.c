@@ -147,3 +147,21 @@ char *encode_array(SlideInfo *info, int offset, int len, int b64,
   strcat(buff, "]\n");
   return buff;
 }
+
+void append_elem(char **orig, const char *append, const char *split) {
+  char *tmp = NULL;
+
+  if (*orig == NULL) {
+    *orig = calloc(strlen(append) + strlen(split) + 1, sizeof(char));
+    strcat(*orig, split);
+    strcat(*orig, append);
+  } else {
+    tmp = calloc(strlen(*orig) + 1, sizeof(char));
+    memcpy(tmp, *orig, strlen(*orig));
+    *orig = calloc(strlen(*orig) + strlen(split) + strlen(append) + 1, sizeof(char));
+    strcat(*orig, tmp);
+    strcat(*orig, split);
+    strcat(*orig, append);
+    free(tmp);
+  }
+}
