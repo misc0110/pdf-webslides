@@ -92,7 +92,9 @@ int convert(PopplerPage *page, const char *fname, SlideInfo *info) {
   poppler_page_get_size(page, &width, &height);
   surface = cairo_svg_surface_create(fname, width, height);
   img = cairo_create(surface);
-  info->videos = NULL;
+
+  info->videos_pos = "";
+  info->videos = "";
 
   poppler_page_render_for_printing(page, img);
 
@@ -111,10 +113,29 @@ int convert(PopplerPage *page, const char *fname, SlideInfo *info) {
     } else if(type == 19) {
         PopplerMovie *movie = poppler_annot_movie_get_movie(m->annot);
         if(movie) {
-            info->videos = strdup(poppler_movie_get_filename(movie));
+          char *movie_filename = strdup(poppler_movie_get_filename(movie));
+          append_elem(&info->videos, movie_filename, "|");
+
+          PopplerRectangle *rectangle = poppler_rectangle_new();
+          poppler_annot_get_rectangle(m->annot, rectangle);
+          double llx = rectangle->x1 / width;
+          double lly = rectangle->y1 / height;
+          double urx = rectangle->x2 / width;
+          double ury = rectangle->y2 / height;
+
+          size_t bbox_buffer_size =
+              snprintf(NULL, 0, "%f;%f;%f;%f", llx, lly, urx, ury) + 1;
+          char *bbox_buffer = calloc(bbox_buffer_size, 1);
+          sprintf(bbox_buffer, "%f;%f;%f;%f", llx, lly, urx, ury);
+          append_elem(&info->videos_pos, bbox_buffer, "|");
+
+          free(movie_filename);
+          free(bbox_buffer);
+          poppler_rectangle_free(rectangle);
         }
     }
   }
+
   info->annotations = comm;
   poppler_page_free_annot_mapping(annot_list);
 
@@ -125,7 +146,10 @@ int convert(PopplerPage *page, const char *fname, SlideInfo *info) {
     if (a->type == POPPLER_ACTION_LAUNCH) {
       PopplerActionLaunch *launch = (PopplerActionLaunch *)a;
       //         printf("\n\n%s\n", launch->file_name);
-      info->videos = strdup(launch->file_name);
+      char *movie_filename = strdup(launch->file_name);
+      append_elem(&info->videos, movie_filename, "|");
+
+      free(movie_filename);
     }
   }
   poppler_page_free_link_mapping(link_list);
@@ -232,8 +256,8 @@ int main(int argc, char *argv[]) {
                  TAG_FAIL "Could not create output file [m]index.html[/m]\n");
     return 1;
   }
-
   printf_color(1, TAG_INFO "Converting slides...\n");
+
   progress_start(1, (pages + 1) * 5 - 1, NULL);
 
   char *template = strdup((char*)index_html_template); //read_file("index.html.template");
@@ -255,11 +279,14 @@ int main(int argc, char *argv[]) {
   for (int p = 0; p < pages; p++) {
     extract_slide(pdffile, p, info, &options);
   }
+
   info[pages].annotations = "";
   info[pages].slide = "";
   info[pages].videos = "";
   info[pages].thumb = "";
+  info[pages].videos_pos = "";
 
+  char *video_pos_data = encode_array(info, 4, pages + 1, 0, progress_cb);
   char *thumb_data = encode_array(info, 3, pages + 1, 0, progress_cb);
   char *slide_data = encode_array(info, 2, pages + 1, 0, progress_cb);
   char *video_data = encode_array(info, 1, pages + 1, 1, progress_cb);
@@ -271,6 +298,7 @@ int main(int argc, char *argv[]) {
                                     "var slide_info = {"
                                     "'slides': {{slides}},\n"
                                     "'videos': {{videos}},\n"
+                                    "'videos_pos': {{videos_pos}},\n"
                                     "'annotations': {{annotations}},\n"
                                     "'thumb': {{thumb}}\n"
                                     "};\n"
@@ -278,6 +306,7 @@ int main(int argc, char *argv[]) {
 
     template = replace_string_first(template, "{{slides}}", slide_data);
     template = replace_string_first(template, "{{videos}}", video_data);
+    template = replace_string_first(template, "{{videos_pos}}", video_pos_data);
     template = replace_string_first(template, "{{annotations}}", annot_data);
     template = replace_string_first(template, "{{thumb}}", thumb_data);
   } else {
@@ -290,9 +319,9 @@ int main(int argc, char *argv[]) {
              options.name ? options.name : "slides");
     FILE *f = fopen(include, "w");
     fprintf(f,
-            "var slide_info = {'slides': %s,\n'videos': %s,\n'annotations': "
+            "var slide_info = {'slides': %s,\n'videos': %s,\n'videos_pos': %s,\n'annotations': "
             "%s\n, 'thumb': %s\n};\n",
-            slide_data, video_data, annot_data, thumb_data);
+            slide_data, video_data, video_pos_data, annot_data, thumb_data);
     fclose(f);
   }
 
