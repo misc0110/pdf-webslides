@@ -10,7 +10,7 @@ typedef struct __attribute__((packed)) {
   char* videos;
   char* slide;
   char* thumb;
-  char *videos_pos;
+  char* videos_pos;
 } SlideInfo;
 
 // ---------------------------------------------------------------------------

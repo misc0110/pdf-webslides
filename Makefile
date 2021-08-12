@@ -1,5 +1,5 @@
 VERSION = $(shell cat VERSION)
-CFLAGS += -g -Wall -DAPP_VERSION="\"$(VERSION)\""
+CFLAGS += -g -Wall -DAPP_VERSION="\"$(VERSION)\"" -Wno-address-of-packed-member -Wextra
 LDFLAGS +=
 CC ?= gcc
 

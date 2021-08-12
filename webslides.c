@@ -93,8 +93,8 @@ int convert(PopplerPage *page, const char *fname, SlideInfo *info) {
   surface = cairo_svg_surface_create(fname, width, height);
   img = cairo_create(surface);
 
-  info->videos_pos = "";
-  info->videos = "";
+  info->videos_pos = strdup("");
+  info->videos = strdup("");
 
   poppler_page_render_for_printing(page, img);
 
@@ -111,7 +111,7 @@ int convert(PopplerPage *page, const char *fname, SlideInfo *info) {
         g_free(cont);
       }
     } else if(type == 19) {
-        PopplerMovie *movie = poppler_annot_movie_get_movie(m->annot);
+        PopplerMovie *movie = poppler_annot_movie_get_movie((PopplerAnnotMovie*)m->annot);
         if(movie) {
           char *movie_filename = strdup(poppler_movie_get_filename(movie));
           append_elem(&info->videos, movie_filename, "|");
@@ -148,6 +148,7 @@ int convert(PopplerPage *page, const char *fname, SlideInfo *info) {
       //         printf("\n\n%s\n", launch->file_name);
       char *movie_filename = strdup(launch->file_name);
       append_elem(&info->videos, movie_filename, "|");
+      append_elem(&info->videos_pos, "0;0;1;1", "|");
 
       free(movie_filename);
     }
@@ -163,7 +164,10 @@ int convert(PopplerPage *page, const char *fname, SlideInfo *info) {
 }
 
 // ---------------------------------------------------------------------------
-void progress_cb(int slide) { progress_update(1); }
+void progress_cb(int slide) { 
+    (void)slide;
+    progress_update(1); 
+}
 
 // ---------------------------------------------------------------------------
 void extract_slide(PopplerDocument *pdffile, int p, SlideInfo *info,
@@ -258,20 +262,22 @@ int main(int argc, char *argv[]) {
   }
   printf_color(1, TAG_INFO "Converting slides...\n");
 
-  progress_start(1, (pages + 1) * 5 - 1, NULL);
+  progress_start(1, (pages + 1) * 6 - 1, NULL);
 
   char *template = strdup((char*)index_html_template); //read_file("index.html.template");
 
+  char* img_black = encode_array_base64((char *)black_svg, black_svg_len);
+  char* img_freeze = encode_array_base64((char *)freeze_svg, freeze_svg_len);
+  char* img_open = encode_array_base64((char *)open_svg, open_svg_len);
   template = replace_string_first(
-      template, "{{black.svg}}",
-      encode_array_base64((char *)black_svg, black_svg_len));
+      template, "{{black.svg}}", img_black);
   template = replace_string_first(
-      template, "{{freeze.svg}}",
-      encode_array_base64((char *)freeze_svg, freeze_svg_len));
+      template, "{{freeze.svg}}", img_freeze);
   template =
-      replace_string_first(template, "{{open.svg}}",
-                           encode_array_base64((char *)open_svg, open_svg_len));
-
+      replace_string_first(template, "{{open.svg}}", img_open);
+  free(img_black);
+  free(img_freeze);
+  free(img_open);
   SlideInfo info[pages + 1];
   memset(info, 0, sizeof(info));
 
@@ -280,11 +286,11 @@ int main(int argc, char *argv[]) {
     extract_slide(pdffile, p, info, &options);
   }
 
-  info[pages].annotations = "";
-  info[pages].slide = "";
-  info[pages].videos = "";
-  info[pages].thumb = "";
-  info[pages].videos_pos = "";
+  info[pages].annotations = strdup("");
+  info[pages].slide = strdup("");
+  info[pages].videos = strdup("");
+  info[pages].thumb = strdup("");
+  info[pages].videos_pos = strdup("");
 
   char *video_pos_data = encode_array(info, 4, pages + 1, 0, progress_cb);
   char *thumb_data = encode_array(info, 3, pages + 1, 0, progress_cb);
@@ -332,6 +338,21 @@ int main(int argc, char *argv[]) {
   fclose(output);
 
   printf_color(1, TAG_OK "Done!\n");
+  
+  for (int p = 0; p <= pages; p++) {
+    free(info[p].annotations);
+    free(info[p].slide);
+    free(info[p].videos);
+    free(info[p].thumb);
+    free(info[p].videos_pos);
+  }
+  free(template);
+    
+  free(video_pos_data);
+  free(video_data);
+  free(thumb_data);
+  free(slide_data);
+  free(annot_data);
 
   return 0;
 }

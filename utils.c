@@ -140,6 +140,7 @@ char *encode_array(SlideInfo *info, int offset, int len, int b64,
     strcat(buff, "\"");
     strcat(buff, b64_data);
     strcat(buff, "\"");
+    if (b64) free(b64_data);
     if (i != len - 1) strcat(buff, ", ");
     if (cb) cb(i);
   }
@@ -148,6 +149,7 @@ char *encode_array(SlideInfo *info, int offset, int len, int b64,
   return buff;
 }
 
+// ---------------------------------------------------------------------------
 void append_elem(char **orig, const char *append, const char *split) {
   char *tmp = NULL;
 
@@ -156,12 +158,13 @@ void append_elem(char **orig, const char *append, const char *split) {
     strcat(*orig, split);
     strcat(*orig, append);
   } else {
-    tmp = calloc(strlen(*orig) + 1, sizeof(char));
-    memcpy(tmp, *orig, strlen(*orig));
-    *orig = calloc(strlen(*orig) + strlen(split) + strlen(append) + 1, sizeof(char));
-    strcat(*orig, tmp);
-    strcat(*orig, split);
-    strcat(*orig, append);
+    tmp = strdup(*orig);
+    char* appended = calloc(strlen(*orig) + strlen(split) + strlen(append) + 1, sizeof(char));
+    strcat(appended, tmp);
+    strcat(appended, split);
+    strcat(appended, append);
     free(tmp);
+    free(*orig);
+    *orig = appended;
   }
 }

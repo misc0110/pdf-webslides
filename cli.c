@@ -69,7 +69,7 @@ int parse_cli_options(Options *options, getopt_arg_t *cli_options, int argc,
                       char *argv[]) {
   struct option *long_options =
       getopt_get_long_options((getopt_arg_t *)cli_options);
-  int c;
+  int c, ret = 0;
   while ((c = getopt_long(argc, argv, ":spo:nhvc:", long_options, NULL)) != EOF) {
     switch (c) {
       case 's':
@@ -77,7 +77,8 @@ int parse_cli_options(Options *options, getopt_arg_t *cli_options, int argc,
         break;
       case 'h':
         show_usage(argv[0], cli_options);
-        return 1;
+        ret = 1;
+        break;
       case 'p':
         options->presenter = 1;
         break;
@@ -89,7 +90,8 @@ int parse_cli_options(Options *options, getopt_arg_t *cli_options, int argc,
         break;
       case 'v':
         printf("pdf-webslides %s\n", APP_VERSION);
-        return 1;
+        ret = 1;
+        break;
       case 'c':
         options->compress = strdup(optarg);
         break;
@@ -97,7 +99,8 @@ int parse_cli_options(Options *options, getopt_arg_t *cli_options, int argc,
         printf("Option -%c requires an argument.\n", optopt);
         printf("\n");
         show_usage(argv[0], cli_options);
-        return 1;
+        ret = 1;
+        break;
       case '?':
         if (isprint(optopt)) {
           printf("Unknown option -%c.\n", optopt);
@@ -106,13 +109,15 @@ int parse_cli_options(Options *options, getopt_arg_t *cli_options, int argc,
         }
         printf("\n");
         show_usage(argv[0], cli_options);
-        return 1;
+        ret = 1;
+        break;
       default:
         show_usage(argv[0], cli_options);
-        return 1;
+        ret = 1;
+        break;
     }
   }
 
   free(long_options);
-  return 0;
+  return ret;
 }
