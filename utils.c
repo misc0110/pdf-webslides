@@ -71,6 +71,9 @@ char *read_file(char *fname) {
 // ---------------------------------------------------------------------------
 char *encode_file_base64(char *fname) {
   FILE *f = fopen(fname, "rb");
+  if (!f) {
+    return strdup("");
+  }
   fseek(f, 0, SEEK_END);
   size_t s = ftell(f);
   fseek(f, 0, SEEK_SET);

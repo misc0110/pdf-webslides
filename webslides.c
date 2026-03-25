@@ -28,7 +28,7 @@
 #include <shlwapi.h>
 #include <windows.h>
 
-void winsystem(const char* app, char* arg) {
+int winsystem(const char* app, char* arg) {
   STARTUPINFO si;
   PROCESS_INFORMATION pi;
 
@@ -40,10 +40,13 @@ void winsystem(const char* app, char* arg) {
   si.hStdOutput = NULL;
   ZeroMemory(&pi, sizeof(pi));
 
-  CreateProcess(app, arg, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi);
+  if (!CreateProcess(app, arg, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
+    return -1;
+  }
   WaitForSingleObject(pi.hProcess, INFINITE);
   CloseHandle(pi.hProcess);
   CloseHandle(pi.hThread);
+  return 0;
 }
 #endif
 
@@ -85,7 +88,8 @@ int convert(PopplerPage *page, const char *fname, SlideInfo *info) {
   cairo_surface_t *surface;
   cairo_t *img;
   double width, height;
-  char *comm = calloc(1024, 1);
+  const size_t comm_size = 1024;
+  char *comm = calloc(comm_size, 1);
   char fname_prev[256];
   snprintf(fname_prev, 256, "%s.prev.png", fname);
 
@@ -106,8 +110,10 @@ int convert(PopplerPage *page, const char *fname, SlideInfo *info) {
     if (type == 1) {
       char *cont = poppler_annot_get_contents(m->annot);
       if (cont) {
-        strncat(comm, cont, 1024);
-        strncat(comm, "\n", 1024);
+        size_t comm_len = strlen(comm);
+        if (comm_len < comm_size - 1) {
+          snprintf(comm + comm_len, comm_size - comm_len, "%s\n", cont);
+        }
         g_free(cont);
       }
     } else if(type == 19) {
@@ -174,6 +180,8 @@ void extract_slide(PopplerDocument *pdffile, int p, SlideInfo *info,
                    Options *options) {
   PopplerPage *page;
   char fname[64], fname_c[64], fname_p[128];
+  int compressed = 0;
+  static int warned_compress_failed = 0;
   sprintf(fname, "slide-%d.svg", p);
   sprintf(fname_p, "%s.prev.png", fname);
   page = poppler_document_get_page(pdffile, p);
@@ -187,12 +195,22 @@ void extract_slide(PopplerDocument *pdffile, int p, SlideInfo *info,
     char convert_cmd[256];
 #if defined(WINDOWS)
     sprintf(convert_cmd, "\"%s\" %s %s", options->compress, fname, fname_c);
-    winsystem(options->compress, convert_cmd);
+    compressed = winsystem(options->compress, convert_cmd) == 0;
 #endif
 #if defined(LINUX)
     sprintf(convert_cmd, "\"%s\" %s %s 2> /dev/null > /dev/null", options->compress, fname, fname_c);
-    system(convert_cmd);
+    compressed = system(convert_cmd) == 0;
 #endif
+    if (!compressed || access(fname_c, F_OK) == -1) {
+      strcpy(fname_c, fname);
+      if (!warned_compress_failed) {
+        printf_color(1, "\n[y]Warning:[/y] SVG compressor '%s' could not be executed, continuing without compression\n",
+                     options->compress);
+        warned_compress_failed = 1;
+      }
+    } else {
+      compressed = 1;
+    }
   } else {
     strcpy(fname_c, fname);
   }
@@ -206,7 +224,7 @@ void extract_slide(PopplerDocument *pdffile, int p, SlideInfo *info,
   info[p].thumb = encode_file_base64(fname_p);
   unlink(fname);
   unlink(fname_p);
-  if (options->compress) {
+  if (compressed) {
       unlink(fname_c);
   }
 }
