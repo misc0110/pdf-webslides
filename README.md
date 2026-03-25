@@ -40,6 +40,7 @@ Alternatively, appending `?presenter=1` to the URL opens the slides in presenter
 | Home | Go to first slide |
 | End | Go to last slide |
 | g   | Input slide number to go to |
+| e   | Mark the current slide as the last slide for timer color coding and the displayed last slide number |
 | +   | Increase note size |
 | -   | Decrease note size |
 | b   | Turn on/off presentation view, i.e., display an entirely black screen |
@@ -116,4 +117,3 @@ Then, the tool can be built by running
 
     make -f Makefile.win
 	
-
