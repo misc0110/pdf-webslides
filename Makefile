@@ -2,8 +2,13 @@ VERSION = $(shell cat VERSION)
 CFLAGS += -g -Wall -DAPP_VERSION="\"$(VERSION)\"" -Wno-address-of-packed-member -Wextra
 LDFLAGS +=
 CC ?= gcc
+PREFIX = /usr/local
 
 all: pdf-webslides
+
+install: pdf-webslides
+	install -m 755 pdf-webslides $(PREFIX)/bin
+	install -m 644 pdf-webslides.1 $(PREFIX)/share/man/man1
 
 pdf-webslides: webslides.o cli.o utils.o res.o
 	$(CC) webslides.o cli.o utils.o res.o $(LDFLAGS) -o pdf-webslides `pkg-config --libs poppler-glib`
