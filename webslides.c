@@ -2,10 +2,12 @@
 
 #include <cairo-svg.h>
 #include <cairo.h>
+#include <glib.h>
 #include <poppler-document.h>
 #include <poppler-page.h>
 #include <poppler.h>
 #include <stdint.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -16,12 +18,22 @@
 #include "res.h"
 #include "utils.h"
 
-#if defined(__linux__) || defined(__linux) || defined(__unix__) || defined(LINUX) || defined(UNIX)
+#if defined(__APPLE__) && defined(__MACH__)
+#define MACOS
+#endif
+
+#if defined(__linux__) || defined(__linux) || defined(LINUX)
 #define LINUX
 #endif
+
 #if defined(_WIN32) || defined(_WIN64) || defined(__MINGW32__) || defined(__CYGWIN__)
 #define WINDOWS
+#undef MACOS
 #undef LINUX
+#endif
+
+#if !defined(WINDOWS)
+#define POSIX_PLATFORM
 #endif
 
 #if defined(WINDOWS)
@@ -197,7 +209,7 @@ void extract_slide(PopplerDocument *pdffile, int p, SlideInfo *info,
     sprintf(convert_cmd, "\"%s\" %s %s", options->compress, fname, fname_c);
     compressed = winsystem(options->compress, convert_cmd) == 0;
 #endif
-#if defined(LINUX)
+#if defined(POSIX_PLATFORM)
     sprintf(convert_cmd, "\"%s\" %s %s 2> /dev/null > /dev/null", options->compress, fname, fname_c);
     compressed = system(convert_cmd) == 0;
 #endif
@@ -233,7 +245,6 @@ void extract_slide(PopplerDocument *pdffile, int p, SlideInfo *info,
 int main(int argc, char *argv[]) {
   Options options = {.single = 0, .presenter = 0, .nonotes = 0, .name = NULL, .compress = NULL};
   PopplerDocument *pdffile;
-  char abspath[PATH_MAX];
   char fname_uri[PATH_MAX + 32];
   
   if (argc <= 1) {
@@ -250,10 +261,19 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-#if defined(LINUX)
-  realpath(input, abspath);
-  snprintf(fname_uri, sizeof(fname_uri), "file://%s", abspath);
+#if defined(POSIX_PLATFORM)
+  char *abs_input = g_canonicalize_filename(input, NULL);
+  gchar *input_uri = g_filename_to_uri(abs_input, NULL, NULL);
+  if (!input_uri) {
+    g_free(abs_input);
+    printf_color(1, TAG_FAIL "Could not create file URI for '%s'\n", input);
+    return 1;
+  }
+  snprintf(fname_uri, sizeof(fname_uri), "%s", input_uri);
+  g_free(input_uri);
+  g_free(abs_input);
 #elif defined(WINDOWS)
+  char abspath[PATH_MAX];
   GetFullPathName(input, PATH_MAX, abspath, NULL);
   unsigned int urllen = PATH_MAX;
   fname_uri[0] = 0;

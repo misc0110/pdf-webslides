@@ -105,6 +105,20 @@ and
     
 to install the tool as `pdf-webslides`. 
 
+### macOS
+
+On macOS, install the build dependencies with Homebrew:
+
+    brew install pkg-config cairo glib poppler
+
+If `pkg-config` cannot find `poppler-glib`, make sure your `PKG_CONFIG_PATH` includes Homebrew's pkg-config directories. Then build with:
+
+    make
+
+To build a macOS disk image containing the binary, `README.md`, and `LICENSE`, run:
+
+    make dmg
+
 ### Windows
 
 On Windows, the tool can be built using MSYS2. 
